@@ -1,0 +1,21 @@
+[project]
+name = "rl-retest"
+version = "0.1.0"
+description = "Finite-horizon Bayesian decisions after capability changes"
+requires-python = ">=3.11,<3.12"
+dependencies = ["numpy>=1.26,<3", "matplotlib>=3.8,<4"]
+
+[project.scripts]
+rl-retest = "rl_retest.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8,<10"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--basetemp=.tmp/pytest"
+cache_dir = ".cache/pytest"
