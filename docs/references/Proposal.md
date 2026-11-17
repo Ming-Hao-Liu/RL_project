@@ -44,99 +44,117 @@ HSVI 给出策略与最优策略之间效用差距的上界和下界 [7]，AEMS 
 
 ## 3. Task Formulation and Objective / 任务形式化与目标
 
-Each task contains $K$ candidate paths and may include a fallback path with known success probability $q_0$. The type of each path, $Z_i \in \{I, C, A\}$, remains fixed throughout the task. A permanently infeasible path of type $I$ has success probability $p_I(s)=0$. A capability-dependent path of type $C$ has a success probability that varies with capability $s$. A capability-independent path of type $A$ has a fixed success probability, which may be below 1. Prior distributions over path types are known and mutually independent. The policy knows the success-probability table $p_z(s)$ for each type and capability, while the true type of each path must be inferred from observations. Conditional on type and capability, trial outcomes are independent.
+Each task contains $`K`$ candidate paths and may include a fallback path with known success probability $`q_0`$. The type of each path, $`Z_i \in \{I, C, A\}`$, remains fixed throughout the task. A permanently infeasible path of type $`I`$ has success probability $`p_I(s)=0`$. A capability-dependent path of type $`C`$ has a success probability that varies with capability $`s`$. A capability-independent path of type $`A`$ has a fixed success probability, which may be below 1. Prior distributions over path types are known and mutually independent. The policy knows the success-probability table $`p_z(s)`$ for each type and capability, while the true type of each path must be inferred from observations. Conditional on type and capability, trial outcomes are independent.
 
-每个任务包含 $K$ 条候选路径，还可以包含一条成功概率 $q_0$ 已知的备选路径。每条路径的类型 $Z_i \in \{I, C, A\}$ 在整个任务期间保持固定。永久不可行的 $I$ 类型路径成功概率为 $p_I(s)=0$；能力依赖的 $C$ 类型路径，其成功概率随能力 $s$ 变化；能力无关的 $A$ 类型路径具有固定成功概率，该概率可以小于 1。路径类型的先验分布已知且相互独立。策略知道各类型在各能力下的成功概率表 $p_z(s)$，但每条路径的真实类型必须根据观测推断。在给定类型和能力的条件下，各次试验结果相互独立。
+每个任务包含 $`K`$ 条候选路径，还可以包含一条成功概率 $`q_0`$ 已知的备选路径。每条路径的类型 $`Z_i \in \{I, C, A\}`$ 在整个任务期间保持固定。永久不可行的 $`I`$ 类型路径成功概率为 $`p_I(s)=0`$；能力依赖的 $`C`$ 类型路径，其成功概率随能力 $`s`$ 变化；能力无关的 $`A`$ 类型路径具有固定成功概率，该概率可以小于 1。路径类型的先验分布已知且相互独立。策略知道各类型在各能力下的成功概率表 $`p_z(s)`$，但每条路径的真实类型必须根据观测推断。在给定类型和能力的条件下，各次试验结果相互独立。
 
-Each historical record contains the path, the capability at the time of testing, and the outcome. Success counts $n^+_{i,s}$ and failure counts $n^-_{i,s}$, grouped by path and capability, retain all historical information required for type inference and therefore constitute sufficient statistics. Let $b_i^0(z)$ denote the prior type probability and $b_i(z)$ the posterior probability after incorporating historical observations. Then
+Each historical record contains the path, the capability at the time of testing, and the outcome. Success counts $`n^+_{i,s}`$ and failure counts $`n^-_{i,s}`$, grouped by path and capability, retain all historical information required for type inference and therefore constitute sufficient statistics. Let $`b_i^0(z)`$ denote the prior type probability and $`b_i(z)`$ the posterior probability after incorporating historical observations. Then
 
-每条历史记录包含路径、测试时的能力以及结果。按路径和能力分组的成功次数 $n^+_{i,s}$ 和失败次数 $n^-_{i,s}$ 保留了类型推断所需的全部历史信息，因此构成充分统计量。令 $b_i^0(z)$ 表示类型的先验概率，$b_i(z)$ 表示纳入历史观测后的后验概率，则
+每条历史记录包含路径、测试时的能力以及结果。按路径和能力分组的成功次数 $`n^+_{i,s}`$ 和失败次数 $`n^-_{i,s}`$ 保留了类型推断所需的全部历史信息，因此构成充分统计量。令 $`b_i^0(z)`$ 表示类型的先验概率，$`b_i(z)`$ 表示纳入历史观测后的后验概率，则
 
-$$b_i(z) \propto b_i^0(z)\prod_s p_z(s)^{n^+_{i,s}}[1-p_z(s)]^{n^-_{i,s}}.$$
+```math
+b_i(z) \propto b_i^0(z)\prod_s p_z(s)^{n^+_{i,s}}[1-p_z(s)]^{n^-_{i,s}}.
+```
 
-After capability changes to $s_1$, historical likelihoods are still evaluated at the capabilities under which the observations were generated. The resulting type posterior is combined with $p_z(s_1)$ to predict current success probabilities. Two additional conditions serve as controls: a misspecified-memory condition treats historical trials as observations generated at $s_1$, and a memory-reset condition discards the history and restarts from the prior.
+After capability changes to $`s_1`$, historical likelihoods are still evaluated at the capabilities under which the observations were generated. The resulting type posterior is combined with $`p_z(s_1)`$ to predict current success probabilities. Two additional conditions serve as controls: a misspecified-memory condition treats historical trials as observations generated at $`s_1`$, and a memory-reset condition discards the history and restarts from the prior.
 
-能力变化为 $s_1$ 后，历史似然仍按产生观测时的能力计算。所得类型后验与 $p_z(s_1)$ 结合，用于预测当前成功概率。另外设置两个对照条件：记忆模型误设条件将历史试验视为在 $s_1$ 下产生的观测；记忆重置条件丢弃历史，从先验重新开始。
+能力变化为 $`s_1`$ 后，历史似然仍按产生观测时的能力计算。所得类型后验与 $`p_z(s_1)`$ 结合，用于预测当前成功概率。另外设置两个对照条件：记忆模型误设条件将历史试验视为在 $`s_1`$ 下产生的观测；记忆重置条件丢弃历史，从先验重新开始。
 
-In the new stage, testing path $i$ incurs a cost $\kappa > 0$ and yields a binary success or failure observation. Tests leave path types unchanged, and task rewards are obtained only from terminal execution. At most $B$ tests are permitted, including repeated tests of the same path. After choosing STOP, the policy selects one path for a single execution and receives $R\cdot\operatorname{Bernoulli}(p_{Z_i}(s_1))$: a success yields $R$, and a failure yields 0. The task then terminates. Conditional on path type, test outcomes and the terminal execution outcome are independent. Historical testing costs are sunk. The objective is to maximize expected terminal reward minus the cost of new tests:
+In the new stage, testing path $`i`$ incurs a cost $`\kappa > 0`$ and yields a binary success or failure observation. Tests leave path types unchanged, and task rewards are obtained only from terminal execution. At most $`B`$ tests are permitted, including repeated tests of the same path. After choosing STOP, the policy selects one path for a single execution and receives $`R\cdot\operatorname{Bernoulli}(p_{Z_i}(s_1))`$: a success yields $`R`$, and a failure yields 0. The task then terminates. Conditional on path type, test outcomes and the terminal execution outcome are independent. Historical testing costs are sunk. The objective is to maximize expected terminal reward minus the cost of new tests:
 
-在新阶段，测试路径 $i$ 产生 $\kappa > 0$ 的成本，并得到成功或失败的二元观测。测试不改变路径类型，任务奖励只在最终执行时获得。最多允许 $B$ 次测试，包括对同一路径的重复测试。选择 STOP 后，策略选择一条路径执行一次，获得 $R\cdot\operatorname{Bernoulli}(p_{Z_i}(s_1))$：成功获得 $R$，失败获得 0，任务随即结束。给定路径类型时，测试结果和最终执行结果相互独立。历史测试成本为沉没成本。目标是最大化期望最终奖励减去新测试成本：
+在新阶段，测试路径 $`i`$ 产生 $`\kappa > 0`$ 的成本，并得到成功或失败的二元观测。测试不改变路径类型，任务奖励只在最终执行时获得。最多允许 $`B`$ 次测试，包括对同一路径的重复测试。选择 STOP 后，策略选择一条路径执行一次，获得 $`R\cdot\operatorname{Bernoulli}(p_{Z_i}(s_1))`$：成功获得 $`R`$，失败获得 0，任务随即结束。给定路径类型时，测试结果和最终执行结果相互独立。历史测试成本为沉没成本。目标是最大化期望最终奖励减去新测试成本：
 
-$$\max_\pi J(\pi)=\mathbb E_\pi[R\mathbf 1\{\text{terminal success}\}-\kappa N],\quad N\le B.$$
+```math
+\max_\pi J(\pi)=\mathbb E_\pi[R\mathbf 1\{\text{terminal success}\}-\kappa N],\quad N\le B.
+```
 
-Here, $\pi$ denotes a policy and $N$ the number of tests performed in the new stage. Let $b$ denote the current beliefs over path types. The posterior predictive success probability of path $i$ is $\mu_i(b)=\sum_z b_i(z)p_z(s_1)$, and the value of stopping immediately and selecting the best path is $S(b)=R\max\{q_0,\mu_1(b),\ldots,\mu_K(b)\}$. With $h$ tests remaining, let $\tau(b,i,o)$ denote the Bayesian belief update after testing path $i$ and observing outcome $o$. The optimal value satisfies
+Here, $`\pi`$ denotes a policy and $`N`$ the number of tests performed in the new stage. Let $`b`$ denote the current beliefs over path types. The posterior predictive success probability of path $`i`$ is $`\mu_i(b)=\sum_z b_i(z)p_z(s_1)`$, and the value of stopping immediately and selecting the best path is $`S(b)=R\max\{q_0,\mu_1(b),\ldots,\mu_K(b)\}`$. With $`h`$ tests remaining, let $`\tau(b,i,o)`$ denote the Bayesian belief update after testing path $`i`$ and observing outcome $`o`$. The optimal value satisfies
 
-其中，$\pi$ 表示策略，$N$ 表示新阶段执行的测试次数。令 $b$ 表示当前对路径类型的信念。路径 $i$ 的后验预测成功概率为 $\mu_i(b)=\sum_z b_i(z)p_z(s_1)$，立即停止并选择最佳路径的价值为 $S(b)=R\max\{q_0,\mu_1(b),\ldots,\mu_K(b)\}$。在剩余 $h$ 次测试时，令 $\tau(b,i,o)$ 表示测试路径 $i$ 并观测到结果 $o$ 后的贝叶斯信念更新。最优价值满足
+其中，$`\pi`$ 表示策略，$`N`$ 表示新阶段执行的测试次数。令 $`b`$ 表示当前对路径类型的信念。路径 $`i`$ 的后验预测成功概率为 $`\mu_i(b)=\sum_z b_i(z)p_z(s_1)`$，立即停止并选择最佳路径的价值为 $`S(b)=R\max\{q_0,\mu_1(b),\ldots,\mu_K(b)\}`$。在剩余 $`h`$ 次测试时，令 $`\tau(b,i,o)`$ 表示测试路径 $`i`$ 并观测到结果 $`o`$ 后的贝叶斯信念更新。最优价值满足
 
-$$V_0(b)=S(b),$$
-$$V_h(b)=\max\left\{S(b),\ \max_i\left[-\kappa+\sum_{o\in\{0,1\}}P(o\mid b,i)V_{h-1}(\tau(b,i,o))\right]\right\}.$$
+```math
+V_0(b)=S(b),
+```
 
-This Bellman recurrence compares immediate stopping with further testing. The test budget $B$ limits actual interactions, whereas the search budget introduced below limits planning computation. These budgets are accounted for separately.
+```math
+V_h(b)=\max\left\{S(b),\ \max_i\left[-\kappa+\sum_{o\in\{0,1\}}P(o\mid b,i)V_{h-1}(\tau(b,i,o))\right]\right\}.
+```
 
-这一贝尔曼递推比较立即停止与继续测试。测试预算 $B$ 限制实际交互次数，下文引入的搜索预算则限制规划计算量；两者分别计量。
+This Bellman recurrence compares immediate stopping with further testing. The test budget $`B`$ limits actual interactions, whereas the search budget introduced below limits planning computation. These budgets are accounted for separately.
+
+这一贝尔曼递推比较立即停止与继续测试。测试预算 $`B`$ 限制实际交互次数，下文引入的搜索预算则限制规划计算量；两者分别计量。
 
 ## 4. Theoretical Analysis and Anytime Planning / 理论分析与可随时终止的规划
 
-We will first establish that, under a correct model, free access to history, and the option to ignore historical information, the ex ante expected value satisfies the ordering: complete history ≥ any correctly interpreted historical summary ≥ memory reset. Retaining sufficient statistics yields the same value as retaining the complete history. This separates information loss due to compression from utility loss due to misinterpretation. When only the initial belief is misspecified and the subsequent observation model is correct, let $\delta$ denote the total variation distance between the true and assumed joint distributions over path types. We will derive the utility-loss bound $2(R+B\kappa)\delta$ for a policy optimized under the misspecified initial belief and examine its conditions using analytically tractable examples.
+We will first establish that, under a correct model, free access to history, and the option to ignore historical information, the ex ante expected value satisfies the ordering: complete history ≥ any correctly interpreted historical summary ≥ memory reset. Retaining sufficient statistics yields the same value as retaining the complete history. This separates information loss due to compression from utility loss due to misinterpretation. When only the initial belief is misspecified and the subsequent observation model is correct, let $`\delta`$ denote the total variation distance between the true and assumed joint distributions over path types. We will derive the utility-loss bound $`2(R+B\kappa)\delta`$ for a policy optimized under the misspecified initial belief and examine its conditions using analytically tractable examples.
 
-我们首先证明：在模型正确、可免费获取历史且可以选择忽略历史信息的条件下，事前期望价值满足如下顺序：完整历史 ≥ 任何被正确解释的历史摘要 ≥ 记忆重置。保留充分统计量所获得的价值与保留完整历史相同。这区分了压缩造成的信息损失与错误解释造成的效用损失。当只有初始信念被误设且后续观测模型正确时，令 $\delta$ 表示路径类型的真实联合分布与假定联合分布之间的全变差距离。我们将推导在误设初始信念下优化所得策略的效用损失界 $2(R+B\kappa)\delta$，并通过可解析的例子考察其适用条件。
+我们首先证明：在模型正确、可免费获取历史且可以选择忽略历史信息的条件下，事前期望价值满足如下顺序：完整历史 ≥ 任何被正确解释的历史摘要 ≥ 记忆重置。保留充分统计量所获得的价值与保留完整历史相同。这区分了压缩造成的信息损失与错误解释造成的效用损失。当只有初始信念被误设且后续观测模型正确时，令 $`\delta`$ 表示路径类型的真实联合分布与假定联合分布之间的全变差距离。我们将推导在误设初始信念下优化所得策略的效用损失界 $`2(R+B\kappa)\delta`$，并通过可解析的例子考察其适用条件。
 
-One example directly illustrates the effect of misinterpreting historical failures. Consider one path with unknown type, prior $(0.2, 0.6, 0.2)$, historical success probabilities $(0, 0, 1)$, current success probabilities $(0, 1, 1)$, fallback success probability $0.5$, and $R=1, B=1, \kappa=0.11$. A single historical trial is retained. Under memory reset, the current predictive success probability is $0.8$. One additional test improves expected terminal reward by $0.1$, which is below its cost, so immediate execution yields expected net utility $0.8$. With correctly interpreted history, the historical trial succeeds with probability $0.2$, yielding terminal value $1$. Following a historical failure, the current predictive success probability is $0.75$, and an additional test yields expected terminal reward $0.875$. After subtracting the test cost, the unconditional expected net utility is $0.2+0.8(0.875-0.11)=0.812$. Treating the historical failure as a failure under the current capability assigns zero probability to path feasibility and causes the policy to select the fallback. Average net utility then falls to $0.2+0.8\times 0.5=0.6$. All values are evaluated under the same true model.
+One example directly illustrates the effect of misinterpreting historical failures. Consider one path with unknown type, prior $`(0.2, 0.6, 0.2)`$, historical success probabilities $`(0, 0, 1)`$, current success probabilities $`(0, 1, 1)`$, fallback success probability $`0.5`$, and $`R=1, B=1, \kappa=0.11`$. A single historical trial is retained. Under memory reset, the current predictive success probability is $`0.8`$. One additional test improves expected terminal reward by $`0.1`$, which is below its cost, so immediate execution yields expected net utility $`0.8`$. With correctly interpreted history, the historical trial succeeds with probability $`0.2`$, yielding terminal value $`1`$. Following a historical failure, the current predictive success probability is $`0.75`$, and an additional test yields expected terminal reward $`0.875`$. After subtracting the test cost, the unconditional expected net utility is $`0.2+0.8(0.875-0.11)=0.812`$. Treating the historical failure as a failure under the current capability assigns zero probability to path feasibility and causes the policy to select the fallback. Average net utility then falls to $`0.2+0.8\times 0.5=0.6`$. All values are evaluated under the same true model.
 
-一个例子直接说明错误解释历史失败的影响。考虑一条类型未知的路径，先验为 $(0.2, 0.6, 0.2)$，历史成功概率为 $(0, 0, 1)$，当前成功概率为 $(0, 1, 1)$，备选路径成功概率为 $0.5$，且 $R=1, B=1, \kappa=0.11$。保留一次历史试验。在记忆重置下，当前预测成功概率为 $0.8$。增加一次测试能使期望最终奖励提高 $0.1$，低于测试成本，因此立即执行的期望净效用为 $0.8$。正确解释历史时，历史试验以 $0.2$ 的概率成功，得到最终价值 $1$。若历史试验失败，当前预测成功概率为 $0.75$，增加一次测试可得到 $0.875$ 的期望最终奖励。扣除测试成本后，无条件期望净效用为 $0.2+0.8(0.875-0.11)=0.812$。若将历史失败当作当前能力下的失败，则会将路径可行性的概率判为零，使策略选择备选路径。平均净效用因而降至 $0.2+0.8\times 0.5=0.6$。所有数值均在同一个真实模型下评估。
+一个例子直接说明错误解释历史失败的影响。考虑一条类型未知的路径，先验为 $`(0.2, 0.6, 0.2)`$，历史成功概率为 $`(0, 0, 1)`$，当前成功概率为 $`(0, 1, 1)`$，备选路径成功概率为 $`0.5`$，且 $`R=1, B=1, \kappa=0.11`$。保留一次历史试验。在记忆重置下，当前预测成功概率为 $`0.8`$。增加一次测试能使期望最终奖励提高 $`0.1`$，低于测试成本，因此立即执行的期望净效用为 $`0.8`$。正确解释历史时，历史试验以 $`0.2`$ 的概率成功，得到最终价值 $`1`$。若历史试验失败，当前预测成功概率为 $`0.75`$，增加一次测试可得到 $`0.875`$ 的期望最终奖励。扣除测试成本后，无条件期望净效用为 $`0.2+0.8(0.875-0.11)=0.812`$。若将历史失败当作当前能力下的失败，则会将路径可行性的概率判为零，使策略选择备选路径。平均净效用因而降至 $`0.2+0.8\times 0.5=0.6`$。所有数值均在同一个真实模型下评估。
 
-Another example illustrates the value of sequential testing. Let the capability-independent type have success probability $0.05$, the capability-dependent type have current success probability $0.8$ and prior probability $0.05$, and the fallback have success probability $0.5$. The permanently infeasible type has zero prior probability. Even after one successful test, the posterior predictive success probability remains below that of the fallback, so a myopic policy stops. A policy that tests once and performs a second test only after success achieves an expected net utility improvement of $0.00309375$ over immediate fallback selection when $\kappa=0.005$.
+Another example illustrates the value of sequential testing. Let the capability-independent type have success probability $`0.05`$, the capability-dependent type have current success probability $`0.8`$ and prior probability $`0.05`$, and the fallback have success probability $`0.5`$. The permanently infeasible type has zero prior probability. Even after one successful test, the posterior predictive success probability remains below that of the fallback, so a myopic policy stops. A policy that tests once and performs a second test only after success achieves an expected net utility improvement of $`0.00309375`$ over immediate fallback selection when $`\kappa=0.005`$.
 
-另一个例子说明连续测试的价值。设能力无关类型的成功概率为 $0.05$，能力依赖类型的当前成功概率为 $0.8$、先验概率为 $0.05$，备选路径的成功概率为 $0.5$；永久不可行类型的先验概率为零。即使一次测试成功，后验预测成功概率仍低于备选路径，因此短视策略会停止。当 $\kappa=0.005$ 时，先测试一次、仅在成功后进行第二次测试的策略，相比立即选择备选路径，期望净效用提高 $0.00309375$。
+另一个例子说明连续测试的价值。设能力无关类型的成功概率为 $`0.05`$，能力依赖类型的当前成功概率为 $`0.8`$、先验概率为 $`0.05`$，备选路径的成功概率为 $`0.5`$；永久不可行类型的先验概率为零。即使一次测试成功，后验预测成功概率仍低于备选路径，因此短视策略会停止。当 $`\kappa=0.005`$ 时，先测试一次、仅在成功后进行第二次测试的策略，相比立即选择备选路径，期望净效用提高 $`0.00309375`$。
 
 Each search node represents a belief over path types and maintains lower and upper value bounds. The initial lower bound is the value of stopping immediately. The initial upper bound is the value obtained if all path types were revealed at no cost:
 
 每个搜索节点表示对路径类型的一个信念，并维护价值下界和上界。初始下界为立即停止的价值；初始上界为免费获知所有路径类型时获得的价值：
 
-$$L_h^{(0)}(b)=S(b),$$
-$$U_h^{(0)}(b)=R\mathbb E_b[\max\{q_0,p_{Z_1}(s_1),\ldots,p_{Z_K}(s_1)\}].$$
+```math
+L_h^{(0)}(b)=S(b),
+```
 
-For $h=0$, both bounds are set to $S(b)$. Bounds are maintained for every candidate action, with unexpanded branches using the initial bounds. After expansion, the bounds of the success and failure branches are weighted by their observation probabilities, the test cost is subtracted, and the result is compared with the value of stopping. During backup, lower bounds increase monotonically and upper bounds decrease monotonically.
+```math
+U_h^{(0)}(b)=R\mathbb E_b[\max\{q_0,p_{Z_1}(s_1),\ldots,p_{Z_K}(s_1)\}].
+```
 
-当 $h=0$ 时，两个界均设为 $S(b)$。每个候选动作都维护上下界，未展开分支使用初始界。展开后，成功和失败分支的界按各自观测概率加权，减去测试成本，再与停止价值比较。在回传过程中，下界单调增加，上界单调减少。
+For $`h=0`$, both bounds are set to $`S(b)`$. Bounds are maintained for every candidate action, with unexpanded branches using the initial bounds. After expansion, the bounds of the success and failure branches are weighted by their observation probabilities, the test cost is subtracted, and the result is compared with the value of stopping. During backup, lower bounds increase monotonically and upper bounds decrease monotonically.
 
-The upper bound can be computed directly from the distinct success probabilities, avoiding enumeration of all $3^K$ type assignments. Let $v_0=q_0 < v_1 < \cdots < v_m$ list the distinct success probabilities above the fallback, and let $F_i(t)=\sum_z b_i(z)\mathbf 1\{p_z(s_1)\le t\}$ denote the probability that path $i$ has success probability at most $t$. Then
+当 $`h=0`$ 时，两个界均设为 $`S(b)`$。每个候选动作都维护上下界，未展开分支使用初始界。展开后，成功和失败分支的界按各自观测概率加权，减去测试成本，再与停止价值比较。在回传过程中，下界单调增加，上界单调减少。
 
-上界可以根据不同的成功概率直接计算，无须枚举全部 $3^K$ 种类型组合。令 $v_0=q_0 < v_1 < \cdots < v_m$ 列出高于备选路径成功概率的各个不同成功概率，并令 $F_i(t)=\sum_z b_i(z)\mathbf 1\{p_z(s_1)\le t\}$ 表示路径 $i$ 的成功概率至多为 $t$ 的概率，则
+The upper bound can be computed directly from the distinct success probabilities, avoiding enumeration of all $`3^K`$ type assignments. Let $`v_0=q_0 < v_1 < \cdots < v_m`$ list the distinct success probabilities above the fallback, and let $`F_i(t)=\sum_z b_i(z)\mathbf 1\{p_z(s_1)\le t\}`$ denote the probability that path $`i`$ has success probability at most $`t`$. Then
 
-$$U_h^{(0)}(b)/R=q_0+\sum_{j=1}^{m}(v_j-v_{j-1})\left[1-\prod_i F_i(v_{j-1})\right],\quad h>0.$$
+上界可以根据不同的成功概率直接计算，无须枚举全部 $`3^K`$ 种类型组合。令 $`v_0=q_0 < v_1 < \cdots < v_m`$ 列出高于备选路径成功概率的各个不同成功概率，并令 $`F_i(t)=\sum_z b_i(z)\mathbf 1\{p_z(s_1)\le t\}`$ 表示路径 $`i`$ 的成功概率至多为 $`t`$ 的概率，则
 
-When all paths share the same success-probability table for the three types, $m\le 3$, and the computation requires $O(Km)$ time. This product formula relies on posterior independence across path types; correlated types require evaluation under their joint distribution.
+```math
+U_h^{(0)}(b)/R=q_0+\sum_{j=1}^{m}(v_j-v_{j-1})\left[1-\prod_i F_i(v_{j-1})\right],\quad h>0.
+```
 
-当所有路径对三种类型共用同一成功概率表时，$m\le 3$，计算所需时间为 $O(Km)$。这一乘积公式依赖路径类型后验之间的独立性；若类型相关，则需要在其联合分布下计算。
+When all paths share the same success-probability table for the three types, $`m\le 3`$, and the computation requires $`O(Km)`$ time. This product formula relies on posterior independence across path types; correlated types require evaluation under their joint distribution.
 
-Each lower bound is stored with a complete executable policy that attains it. Unexpanded leaves stop immediately, while expanded nodes retain the selected action and the continuation policy for each outcome. Branches assigned zero probability by the model also stop immediately. Search first selects the action with the highest current upper bound, then expands the leaf within that action with the largest probability-weighted bound width. Ties are resolved by path index. An action is pruned when its upper bound is no greater than the best lower bound at the current node, while the complete policy realizing the lower bound is retained. When the root satisfies $U-L\le \varepsilon R$, or the computation budget is exhausted, the algorithm returns this policy and its value interval. Execution follows the recorded outcome-contingent continuation policies. By the monotonicity of the Bellman recurrence and the executability of the lower-bound policy,
+当所有路径对三种类型共用同一成功概率表时，$`m\le 3`$，计算所需时间为 $`O(Km)`$。这一乘积公式依赖路径类型后验之间的独立性；若类型相关，则需要在其联合分布下计算。
 
-每个下界都与达到该值的完整可执行策略一同保存。未展开的叶节点立即停止；已展开节点保留所选动作和每个结果对应的后续策略。模型赋予零概率的分支也立即停止。搜索首先选择当前上界最高的动作，再展开该动作下概率加权界宽最大的叶节点；相同时按路径索引决定。当某动作的上界不大于当前节点的最佳下界时，该动作被剪枝，同时保留实现该下界的完整策略。当根节点满足 $U-L\le \varepsilon R$ 或计算预算耗尽时，算法返回该策略及其价值区间。执行时遵循记录的、依观测结果而定的后续策略。根据贝尔曼递推的单调性和下界策略的可执行性，
+Each lower bound is stored with a complete executable policy that attains it. Unexpanded leaves stop immediately, while expanded nodes retain the selected action and the continuation policy for each outcome. Branches assigned zero probability by the model also stop immediately. Search first selects the action with the highest current upper bound, then expands the leaf within that action with the largest probability-weighted bound width. Ties are resolved by path index. An action is pruned when its upper bound is no greater than the best lower bound at the current node, while the complete policy realizing the lower bound is retained. When the root satisfies $`U-L\le \varepsilon R`$, or the computation budget is exhausted, the algorithm returns this policy and its value interval. Execution follows the recorded outcome-contingent continuation policies. By the monotonicity of the Bellman recurrence and the executability of the lower-bound policy,
 
-$$0\le V^*(b)-J(\pi_L\mid b)\le U(b)-L(b).$$
+每个下界都与达到该值的完整可执行策略一同保存。未展开的叶节点立即停止；已展开节点保留所选动作和每个结果对应的后续策略。模型赋予零概率的分支也立即停止。搜索首先选择当前上界最高的动作，再展开该动作下概率加权界宽最大的叶节点；相同时按路径索引决定。当某动作的上界不大于当前节点的最佳下界时，该动作被剪枝，同时保留实现该下界的完整策略。当根节点满足 $`U-L\le \varepsilon R`$ 或计算预算耗尽时，算法返回该策略及其价值区间。执行时遵循记录的、依观测结果而定的后续策略。根据贝尔曼递推的单调性和下界策略的可执行性，
 
-Here, $V^*(b)$ is the optimal value and $\pi_L$ is the stored lower-bound policy. Thus, $U-L$ bounds the policy's suboptimality under the specified model. In model-misspecification experiments, we will report the planner's model-based interval and the utility gap under the true environment separately. The initial upper bound may be loose; experiments will quantify the resulting computational cost and the effect of pruning on search speed.
+```math
+0\le V^*(b)-J(\pi_L\mid b)\le U(b)-L(b).
+```
 
-其中，$V^*(b)$ 为最优价值，$\pi_L$ 为保存的下界策略。因此，$U-L$ 给出指定模型下该策略的次优程度界。在模型误设实验中，我们将分别报告规划器基于模型的区间和真实环境下的效用差距。初始上界可能较松；实验将量化由此产生的计算成本及剪枝对搜索速度的影响。
+Here, $`V^*(b)`$ is the optimal value and $`\pi_L`$ is the stored lower-bound policy. Thus, $`U-L`$ bounds the policy's suboptimality under the specified model. In model-misspecification experiments, we will report the planner's model-based interval and the utility gap under the true environment separately. The initial upper bound may be loose; experiments will quantify the resulting computational cost and the effect of pruning on search speed.
+
+其中，$`V^*(b)`$ 为最优价值，$`\pi_L`$ 为保存的下界策略。因此，$`U-L`$ 给出指定模型下该策略的次优程度界。在模型误设实验中，我们将分别报告规划器基于模型的区间和真实环境下的效用差距。初始上界可能较松；实验将量化由此产生的计算成本及剪枝对搜索速度的影响。
 
 ## 5. Experimental Design and Evaluation Metrics / 实验设计与评估指标
 
-The main experiment fixes $R=1, q_0=0.5$, with $K\in\{3,6,10\}$, $B\in\{1,2,3\}$, $n\in\{0,3\}$ historical trials per path, $p_C(s_0)=0.1$, $p_C(s_1)\in\{0.1,0.5,0.9\}$, $p_A=0.9$, and $\kappa\in\{0.005,0.02,0.1\}$. This gives $3\times3\times2\times3\times3=162$ parameter settings. For each path, a prior is sampled from $(0.2,0.6,0.2)$, $(0.6,0.3,0.1)$, $(0.1,0.2,0.7)$ using fixed random seeds. Each setting contains 20 independent tasks with historical observations, giving 3240 tasks in total. Priors are sampled within tasks, so the number of parameter settings remains 162. Development and final evaluation use disjoint seed sets, and results will be reported for all parameter settings.
+The main experiment fixes $`R=1, q_0=0.5`$, with $`K\in\{3,6,10\}`$, $`B\in\{1,2,3\}`$, $`n\in\{0,3\}`$ historical trials per path, $`p_C(s_0)=0.1`$, $`p_C(s_1)\in\{0.1,0.5,0.9\}`$, $`p_A=0.9`$, and $`\kappa\in\{0.005,0.02,0.1\}`$. This gives $`3\times3\times2\times3\times3=162`$ parameter settings. For each path, a prior is sampled from $`(0.2,0.6,0.2)`$, $`(0.6,0.3,0.1)`$, $`(0.1,0.2,0.7)`$ using fixed random seeds. Each setting contains 20 independent tasks with historical observations, giving 3240 tasks in total. Priors are sampled within tasks, so the number of parameter settings remains 162. Development and final evaluation use disjoint seed sets, and results will be reported for all parameter settings.
 
-主要实验固定 $R=1, q_0=0.5$，并设置 $K\in\{3,6,10\}$、$B\in\{1,2,3\}$、每条路径的历史试验次数 $n\in\{0,3\}$、$p_C(s_0)=0.1$、$p_C(s_1)\in\{0.1,0.5,0.9\}$、$p_A=0.9$ 和 $\kappa\in\{0.005,0.02,0.1\}$，共得到 $3\times3\times2\times3\times3=162$ 组参数设置。对每条路径，使用固定随机种子从 $(0.2,0.6,0.2)$、$(0.6,0.3,0.1)$、$(0.1,0.2,0.7)$ 中采样一个先验。每组设置包含 20 个带历史观测的独立任务，总计 3240 个任务。先验在任务内部采样，因此参数设置数仍为 162。开发和最终评估使用互不重叠的种子集，并报告所有参数设置的结果。
+主要实验固定 $`R=1, q_0=0.5`$，并设置 $`K\in\{3,6,10\}`$、$`B\in\{1,2,3\}`$、每条路径的历史试验次数 $`n\in\{0,3\}`$、$`p_C(s_0)=0.1`$、$`p_C(s_1)\in\{0.1,0.5,0.9\}`$、$`p_A=0.9`$ 和 $`\kappa\in\{0.005,0.02,0.1\}`$，共得到 $`3\times3\times2\times3\times3=162`$ 组参数设置。对每条路径，使用固定随机种子从 $`(0.2,0.6,0.2)`$、$`(0.6,0.3,0.1)`$、$`(0.1,0.2,0.7)`$ 中采样一个先验。每组设置包含 20 个带历史观测的独立任务，总计 3240 个任务。先验在任务内部采样，因此参数设置数仍为 162。开发和最终评估使用互不重叠的种子集，并报告所有参数设置的结果。
 
 We will compare exact dynamic programming (DP), a myopic policy using the correct model, depth-2 and depth-3 lookahead, blinkered planning, iterative deepening under a matched computation budget, and our upper- and lower-bound search. For each path, blinkered planning solves the subproblem in which further tests are restricted to that path, selects the best initial action, and replans after each observation [1,2]. Memory-reset and misspecified-memory conditions provide additional controls for the effects of memory on decisions. All methods use the same terminal selection rule, test budget, and test cost. Computational comparisons include belief updates, bound computation, and initialization.
 
 我们将比较精确动态规划（DP）、使用正确模型的短视策略、深度为 2 和 3 的前瞻、blinkered 规划、计算预算匹配的迭代加深，以及我们的上下界搜索。对于每条路径，blinkered 规划求解将进一步测试限制在该路径上的子问题，选择最佳初始动作，并在每次观测后重新规划 [1,2]。记忆重置和记忆模型误设条件为考察记忆对决策的影响提供额外对照。所有方法使用相同的最终选择规则、测试预算和测试成本。计算量比较包括信念更新、界的计算和初始化。
 
-Larger-scale experiments use $K\in\{20,40\}$, $B\in\{4,6\}$, with $n=3$, $p_C(s_1)=0.5$, $\kappa=0.02$. Each computation of a successor belief for an outcome branch counts as one evaluation. Search budgets are $10^2,10^3,10^4$ such evaluations, with stopping tolerances $\varepsilon\in\{0.01,0.05\}$. Two stress tests will examine deviations from the modeling assumptions: shifting the planner's assumed current success probability for the capability-dependent type by $\pm 0.1$, and resampling the types of 10% of paths at the capability transition. These tests assess decisions under inaccurate success-probability estimates and changes in path types.
+Larger-scale experiments use $`K\in\{20,40\}`$, $`B\in\{4,6\}`$, with $`n=3`$, $`p_C(s_1)=0.5`$, $`\kappa=0.02`$. Each computation of a successor belief for an outcome branch counts as one evaluation. Search budgets are $`10^2,10^3,10^4`$ such evaluations, with stopping tolerances $`\varepsilon\in\{0.01,0.05\}`$. Two stress tests will examine deviations from the modeling assumptions: shifting the planner's assumed current success probability for the capability-dependent type by $`\pm 0.1`$, and resampling the types of 10% of paths at the capability transition. These tests assess decisions under inaccurate success-probability estimates and changes in path types.
 
-较大规模实验使用 $K\in\{20,40\}$、$B\in\{4,6\}$，并设 $n=3$、$p_C(s_1)=0.5$、$\kappa=0.02$。每次为一个结果分支计算后继信念计为一次评估。搜索预算分别为 $10^2,10^3,10^4$ 次此类评估，停止容差为 $\varepsilon\in\{0.01,0.05\}$。两个压力测试将考察偏离建模假设的情形：将规划器假定的能力依赖类型当前成功概率偏移 $\pm 0.1$；以及在能力转换时重新采样 10% 路径的类型。这些测试评估成功概率估计不准确及路径类型变化时的决策。
+较大规模实验使用 $`K\in\{20,40\}`$、$`B\in\{4,6\}`$，并设 $`n=3`$、$`p_C(s_1)=0.5`$、$`\kappa=0.02`$。每次为一个结果分支计算后继信念计为一次评估。搜索预算分别为 $`10^2,10^3,10^4`$ 次此类评估，停止容差为 $`\varepsilon\in\{0.01,0.05\}`$。两个压力测试将考察偏离建模假设的情形：将规划器假定的能力依赖类型当前成功概率偏移 $`\pm 0.1`$；以及在能力转换时重新采样 10% 路径的类型。这些测试评估成功概率估计不准确及路径类型变化时的决策。
 
-The primary metrics are exact expected net utility, regret relative to the optimal policy, number of tests, number of search expansions, single-core runtime, and bound width. The expected net utility of a complete policy can be computed by recursively enumerating its observation branches. Policies obtained under misspecified models are also evaluated under the true task-generating model. Small-scale experiments will verify $L\le V^*\le U$ for each task; larger-scale experiments will report the value of the available executable policy and the upper bound. Comparisons use paired utility differences on the same tasks, with confidence intervals across tasks. Runtime summaries include the median and upper quantiles.
+The primary metrics are exact expected net utility, regret relative to the optimal policy, number of tests, number of search expansions, single-core runtime, and bound width. The expected net utility of a complete policy can be computed by recursively enumerating its observation branches. Policies obtained under misspecified models are also evaluated under the true task-generating model. Small-scale experiments will verify $`L\le V^*\le U`$ for each task; larger-scale experiments will report the value of the available executable policy and the upper bound. Comparisons use paired utility differences on the same tasks, with confidence intervals across tasks. Runtime summaries include the median and upper quantiles.
 
-主要指标包括精确期望净效用、相对于最优策略的遗憾、测试次数、搜索展开次数、单核运行时间和界宽。完整策略的期望净效用可通过递归枚举其观测分支计算。在误设模型下得到的策略也将在真实任务生成模型下评估。小规模实验将对每个任务验证 $L\le V^*\le U$；较大规模实验将报告可获得的可执行策略的价值及上界。比较采用同一任务上的配对效用差异，并给出跨任务的置信区间。运行时间汇总包括中位数和高分位数。
+主要指标包括精确期望净效用、相对于最优策略的遗憾、测试次数、搜索展开次数、单核运行时间和界宽。完整策略的期望净效用可通过递归枚举其观测分支计算。在误设模型下得到的策略也将在真实任务生成模型下评估。小规模实验将对每个任务验证 $`L\le V^*\le U`$；较大规模实验将报告可获得的可执行策略的价值及上界。比较采用同一任务上的配对效用差异，并给出跨任务的置信区间。运行时间汇总包括中位数和高分位数。
 
 ## 6. Team Responsibilities and Schedule / 团队分工与进度
 

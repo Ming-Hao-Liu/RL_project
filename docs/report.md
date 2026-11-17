@@ -24,7 +24,9 @@
 
 历史按路径、能力记录成功/失败次数。旧历史成本是沉没成本。新阶段最多测试B次，每次付κ；STOP保存具体执行路径，最终只执行一次并获得成功奖励R。固定策略的净效用为
 
-$$J(\pi)=R P_\pi(\text{终止成功})-\kappa E_\pi N.$$
+```math
+J(\pi)=R P_\pi(\text{终止成功})-\kappa E_\pi N.
+```
 
 我们分开构造规划信念和真实条件信念。correct使用历史发生时的能力；reset使用先验；misread用当前能力解释旧历史。三种策略都在同一实际历史对应的真实模型中评价。评价器不能按真实后验重新选择终止路径。类型重采样压力组另按真实混合分布评价。
 
@@ -32,13 +34,17 @@ $$J(\pi)=R P_\pi(\text{终止成功})-\kappa E_\pi N.$$
 
 后验满足
 
-$$b_i(z)\propto b_i^0(z)\prod_s p_z(s)^{n^+_{i,s}}[1-p_z(s)]^{n^-_{i,s}}.$$
+```math
+b_i(z)\propto b_i^0(z)\prod_s p_z(s)^{n^+_{i,s}}[1-p_z(s)]^{n^-_{i,s}}.
+```
 
 条件独立使历史似然只依赖这些计数；独立先验和已知观测机制使路径后验继续因子化。因此完整记录与正确分组计数定义相同决策问题。共享未知参数或未建模的选择性记录会破坏这些条件。
 
 设μ_i(b)=Σ_z b_i(z)p_z(s₁)，S(b)=R max(q₀,μ₁,…,μ_K)。令τ表示给定测试路径和观测后的贝叶斯信念更新。剩余h次测试的最优值为
 
-$$V_0=S,\quad V_h(b)=\max\{S(b),\max_i[-\kappa+\sum_o P(o\mid b,i)V_{h-1}(\tau(b,i,o))]\}.$$
+```math
+V_0=S,\quad V_h(b)=\max\{S(b),\max_i[-\kappa+\sum_o P(o\mid b,i)V_{h-1}(\tau(b,i,o))]\}.
+```
 
 归纳证明：首动作是停止或某条路径测试，后续交给h−1时域最优策略。可忽略额外预算，因此V随B非减；每个固定策略的价值随成本非增，取最大后仍非增。测试次数本身不必单调。
 
@@ -48,17 +54,23 @@ $$V_0=S,\quad V_h(b)=\max\{S(b),\max_i[-\kappa+\sum_o P(o\mid b,i)V_{h-1}(\tau(b
 
 若真实和假定的初始联合类型分布为P、Q，后续机制相同，对固定策略，给定类型后的期望回报范围为[−Bκ,R]。由全变差得到
 
-$$|J_P(\pi)-J_Q(\pi)|\le(R+B\kappa)\mathrm{TV}(P,Q).$$
+```math
+|J_P(\pi)-J_Q(\pi)|\le(R+B\kappa)\mathrm{TV}(P,Q).
+```
 
 将真实最优与假定模型搜索策略的损失拆为两次换分布和一次模型内规划误差，得到
 
-$$V_P^*-J_P(\pi_{Q,L})\le2(R+B\kappa)\mathrm{TV}(P,Q)+(U_Q-L_Q).$$
+```math
+V_P^*-J_P(\pi_{Q,L})\le2(R+B\kappa)\mathrm{TV}(P,Q)+(U_Q-L_Q).
+```
 
 这里TV是联合分布距离。未来概率表也误设时，固定类型条件机制不同，不能直接使用此界。恰有一路径重采样会形成相关混合，不能把它替换为边缘乘积。该界用于解释误差来源，不宣称紧致。
 
 免费获知全部类型的价值U_PI=R E[max(q₀,p_Z₁,…,p_ZK)]是上界。任意以测试开始的策略至少付一次成本，因此
 
-$$V_h(b)\le\max\{S(b),U_{PI}(b)-\kappa\},\quad h>0.$$
+```math
+V_h(b)\le\max\{S(b),U_{PI}(b)-\kappa\},\quad h>0.
+```
 
 若U_PI−S≤κ，STOP已达到上界。独立后验下可用不同成功率的尾概率乘积在O(Km)时间计算U_PI，避免3^K枚举。完整证明、边界处理和概率重合情形见[理论说明](theory.md)。
 
@@ -90,8 +102,13 @@ $$V_h(b)\le\max\{S(b),U_{PI}(b)-\kappa\},\quad h>0.$$
 
 **价值函数如何产生策略。** 以Q表示“现在先选某动作，之后采用最优策略”的价值，令μ_{−1}=q₀表示fallback：
 
-$$Q_h^*(b,\operatorname{Stop}(j))=R\mu_j(b),$$
-$$Q_h^*(b,\operatorname{Test}(i))=-\kappa+\sum_oP(o\mid b,i)V_{h-1}(\tau(b,i,o)),\qquad h>0.$$
+```math
+Q_h^*(b,\operatorname{Stop}(j))=R\mu_j(b),
+```
+
+```math
+Q_h^*(b,\operatorname{Test}(i))=-\kappa+\sum_oP(o\mid b,i)V_{h-1}(\tau(b,i,o)),\qquad h>0.
+```
 
 对允许动作取最大得到V_h，对应的argmax给出π_h*。Q在代码中是各候选动作的临时计算值，不是训练得到的Q网络，也没有独立保存一张通用Q表。终止动作中的最大值可先合并为S(b)，便得到§2.2的Bellman式。
 
@@ -137,7 +154,9 @@ $$Q_h^*(b,\operatorname{Test}(i))=-\kappa+\sum_oP(o\mid b,i)V_{h-1}(\tau(b,i,o))
 
 该策略终止奖励改善273/32000，期望测试数87/80，故
 
-$$V_2(c)=\tfrac12+\max(0,\tfrac{273}{32000}-\tfrac{87}{80}c),\quad V_1(c)=\tfrac12.$$
+```math
+V_2(c)=\tfrac12+\max(0,\tfrac{273}{32000}-\tfrac{87}{80}c),\quad V_1(c)=\tfrac12.
+```
 
 固定q₀=0.5、令r=P(C)，一次成功仍不优于fallback而两次成功优于fallback的先验区间为3/515<r≤3/35；固定r=0.05时，对应fallback区间为11/28≤q₀<823/1100。这些边界由预测概率比较直接得到，限定在该两类型例子。
 
@@ -153,7 +172,9 @@ $$V_2(c)=\tfrac12+\max(0,\tfrac{273}{32000}-\tfrac{87}{80}c),\quad V_1(c)=\tfrac
 
 单路径I/C、B1、0<q₀<p≤1时，令μ=pP(C|H)。一次信息毛价值G先随μ线性上升，再线性下降，μ≥q₀/(1−p+q₀)后为0。若0<κ<Rq₀(p−q₀)，严格重测区间为
 
-$$\frac{\kappa}{R(p-q_0)}<\mu<\frac{q_0-\kappa/R}{1-p+q_0}.$$
+```math
+\frac{\kappa}{R(p-q_0)}<\mu<\frac{q_0-\kappa/R}{1-p+q_0}.
+```
 
 [完整推导与边界](theory.md)给出成功/失败后验、临界成本和平局规则。r=0.9、旧p=0.5、新p=0.8、q₀=0.5、κ=0.02时，n=0失败对应μ=0.72：失败后仍选候选，测试没有信息收益；n=1对应μ=0.654545：失败分支转选fallback，净重测优势0.021818，最优值0.676364；n=7对应μ=0.052555：成功分支过少，净重测优势−0.004234，选择fallback。该条件链不代表事前历史信息负价值。
 

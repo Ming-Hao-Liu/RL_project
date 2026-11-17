@@ -27,12 +27,19 @@
 
 我们优化的是
 
-$$J(\pi)=\mathbb E_\pi[R\mathbf1\{\text{最终成功}\}-\kappa N].$$
+```math
+J(\pi)=\mathbb E_\pi[R\mathbf1\{\text{最终成功}\}-\kappa N].
+```
 
 设S(b)为立即选择最佳路线执行的期望奖励，最优价值满足Bellman递推：
 
-$$V_0(b)=S(b),$$
-$$V_h(b)=\max\left\{S(b),\max_i\left[-\kappa+\sum_oP(o\mid b,i)V_{h-1}(\tau(b,i,o))\right]\right\}.$$
+```math
+V_0(b)=S(b),
+```
+
+```math
+V_h(b)=\max\left\{S(b),\max_i\left[-\kappa+\sum_oP(o\mid b,i)V_{h-1}(\tau(b,i,o))\right]\right\}.
+```
 
 它比较“现在停止”与“测试后继续决策”。第一次测试即使不能立即改变终止选择，也可能开启有价值的第二次测试；动态规划会把这种未来收益计入当前决策。选择价值最高的动作得到策略，代码保存完整的成功/失败分支树，评价时严格执行保存动作。
 
