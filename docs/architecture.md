@@ -73,3 +73,9 @@ bounds → model
 `experiments/calibration.py`只负责合成已知类型校准计数、固定估计器与plug-in规划输入，不改变规划器接口。历史/未来单独误差条件在输入构造层完成。共享估计表的统计依赖保存在实验记录的size/repeat中；规划算法仍只接收固定PlanningProblem。
 
 `scripts/run_research.py`冻结机制/校准清单、独立作业与原子输出，复用现有DP和搜索；`analyze_mechanisms.py`/`analyze_calibration.py`从保存记录生成统计与分歧案例；`verify_research.py`固定策略复算并调用测试目录独立验证器。解析阈值案例由分析脚本调用已有DP验算，统计部分不触发重规划。`time_initialization.py`仅补测既有warm搜索；新增计时字段不改变动作选择、计数或预算。`time_deep.py`补测既有24任务的五方法，保存独立匹配计时；`analyze_mechanisms.py`将其并入同任务质量/成本汇总。
+
+## 定向成本消融入口
+
+`scripts/pruning.py`复用现有任务、搜索器及策略格式，不增加生产算法接口。`time`核对20个原large任务及正式策略，调用现有剪枝开关，保存完整配对计时；`analyze`只读取保存结果，复算固定策略并生成统计与诊断图，不运行规划。两操作分别承担实验和分析职责，计时协议见[实验协议](protocol.md)，命令见[使用说明](usage.md)。
+
+原始记录独立保存于`data/pruning`，衍生产物位于`results/pruning`，不改写原large记录。`action_scans`保留既有含义，仅统计未跳过的候选/回传动作处理；未计入的标记及遍历开销通过完整规划计时体现。
