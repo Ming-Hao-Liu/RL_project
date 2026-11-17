@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "started_utc": "2026-11-17T09:37:50Z",
+  "deadline_utc": "2026-11-19T09:37:50Z",
+  "numerical_tolerance": 1e-10,
+  "descriptive_effect_threshold": 0.001,
+  "workers": 2,
+  "grid": {"prior_start": 0.0, "prior_stop": 1.0, "cost_start": 0.0, "cost_stop": 0.15, "points": 21, "anchors": [[0.05, 0.005], [0.05, 0.007844827586206896]], "horizons": [1, 2, 3], "current": [0, 0.8, 0.05]},
+  "deep": {"k": [2, 3], "horizons": [4, 6], "budget": 10000, "epsilon": 0, "profiles": [
+    {"name": "rare_low_cost", "q": [0.05, 0.1, 0.2], "cost": 0.005},
+    {"name": "rare_medium_cost", "q": [0.05, 0.1, 0.2], "cost": 0.02},
+    {"name": "mixed_low_cost", "q": [0.2, 0.5, 0.8], "cost": 0.005},
+    {"name": "mixed_medium_cost", "q": [0.2, 0.5, 0.8], "cost": 0.02},
+    {"name": "confident_low_cost", "q": [0.6, 0.8, 0.95], "cost": 0.005},
+    {"name": "confident_high_cost", "q": [0.6, 0.8, 0.95], "cost": 0.1}
+  ]},
+  "calibration": {
+    "seed": 2026111701, "bootstrap_seed": 2026111702, "bootstrap_samples": 5000,
+    "sizes": [10, 30, 100, 300], "repeats": 30,
+    "selection": {"k": 3, "horizon": 3, "n": [0, 3], "p_c_current": [0.1, 0.5, 0.9], "cost": [0.005, 0.02, 0.1], "index": [0, 1]},
+    "estimator": "Beta(1,1) posterior mean; I fixed zero; C_old m, each C_current m; A pools two independent m-sized batches (2m)",
+    "cluster": "one repeat shares old C, pooled A and the three current C estimates across all 36 tasks; independent repeats and sizes",
+    "primary": "paired true regret of estimated-table DP at m=300 minus m=10, averaged over fixed 36 tasks; independent calibration replicates paired by prespecified index",
+    "diagnostic_slice": {"sizes": [10, 300], "p_c_current": 0.5, "cost": 0.02, "n": 3, "index": [0, 1]},
+    "stop_rule": "all declared tasks, sizes, repeats; no outcome-dependent extension"
+  },
+  "timing": {"planning_indices": [0], "repeats": 3, "budget": 10000, "epsilon": 0},
+  "interpretation": "mechanism grids are deterministic, not population frequency; calibration CIs cover calibration randomness on fixed tasks only"
+}

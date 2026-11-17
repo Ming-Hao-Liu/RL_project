@@ -124,9 +124,12 @@ def solve_bounded_trace(problem: PlanningProblem, budgets, epsilons, *, prune: b
         if len(budgets) != 1:
             raise ValueError('warm initialization requires a single total budget')
         seed_start = perf_counter()
+        root_setup_seconds = seed_start - start
+        myopic_seconds = 0.0
         seed_status = 'analytic_stop' if root.upper <= root.lower else 'low_budget_cold'
         if root.upper > root.lower and max(budgets) >= 1000:
             from .dynamic import solve_lookahead
+            myopic_start = perf_counter()
             try:
                 seed = solve_lookahead(problem, 1, _cache=cache)
                 if seed.model_value > root.lower:
@@ -134,10 +137,13 @@ def solve_bounded_trace(problem: PlanningProblem, budgets, epsilons, *, prune: b
                 seed_status = 'complete'
             except BudgetExhausted:
                 seed_status = 'incomplete'
+            myopic_seconds = perf_counter() - myopic_start
             refresh(root)
         _seed_info.update(status=seed_status, evaluations=cache.stats.evaluations,
                           lower=root.lower, upper=root.upper,
-                          seconds=perf_counter() - seed_start)
+                          seconds=perf_counter() - seed_start,
+                          root_setup_seconds=root_setup_seconds,
+                          myopic_seconds=myopic_seconds)
 
     def capture(target, status):
         snapshots[target] = (cache.result(root.policy, root.lower, root.lower, root.upper, status),
@@ -178,6 +184,10 @@ def solve_bounded_trace(problem: PlanningProblem, budgets, epsilons, *, prune: b
         backup(leaf)
         for ancestor in reversed(ancestors):
             backup(ancestor)
+    if _seed_info is not None:
+        _seed_info['total_seconds'] = perf_counter() - start
+        _seed_info['search_seconds'] = (_seed_info['total_seconds']
+                                      - _seed_info['root_setup_seconds'] - _seed_info['seconds'])
     return snapshots
 
 
