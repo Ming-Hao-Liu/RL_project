@@ -32,7 +32,7 @@ uv run rl-retest verify --run-dir artifacts/dev
 uv run rl-retest analyze --run-dir artifacts/dev
 ```
 
-正式运行使用 `main`、`large` 或 `stress` suite，并为每次新运行指定新的输出目录。`run` 检查冻结源码和配置，续跑只补齐未完成的作业；不要覆盖已有正式记录。`pruning` 是可执行的剪枝诊断配置，不属于已报告的三组正式实验。
+正式运行使用 `main`、`large` 或 `stress` suite，并为每次新运行指定新的输出目录。`run` 检查冻结源码和配置，续跑只补齐未完成的作业；不要覆盖已有正式记录。`pruning` 是补齐原Proposal剪枝成本对照的独立运行组，复用large中的20任务，不并入原三组基准统计；命令见下节。
 
 旧三组数据的严格复算使用其生成代码版本，避免改写来源摘要：
 
@@ -67,6 +67,22 @@ uv run python -m scripts.review_evidence --source data --out results/validation
 ```
 
 前三项读取正式记录；序贯分析还检查固定解析例子的成本边界。容差诊断在既有任务上重新规划，搜索分析读取该诊断结果。重复复现不增加独立样本数。
+
+## 剪枝成本消融
+
+本组使用既有20任务、原搜索和固定M=10000、ε=0.01，仅切换显式剪枝。详细计时、统计和停止规则见[实验协议](protocol.md)。保持环境与线程设置同上；策略运行和计时均使用一个进程，受控计时期间不同时运行本项目其他实验。
+
+以下用于首次建立正式补充数据；已有目录时跳过prepare，用run/time续跑缺失作业和完整计时配对：
+
+```sh
+uv run rl-retest prepare --config configs/study.json --suite pruning --out data/pruning
+uv run rl-retest run --run-dir data/pruning --workers 1
+uv run rl-retest verify --run-dir data/pruning
+uv run python -m scripts.pruning time --source data/pruning --out data/pruning/timing.json
+uv run python -m scripts.pruning analyze --source data/pruning --out results/pruning
+```
+
+prepare/run/verify复用原CLI；time先核对与原large的任务及开启剪枝结果，再保存冻结顺序和120条测量；analyze只读取保存记录，不重新规划。复现分析可以把最后一条的输出改为`artifacts/pruning-analysis-reproduction`。新一轮计时应使用独立输出文件，不能覆盖正式测量；同一文件的续跑只补缺失配对。完整策略、来源清单和原始计时位于data/pruning，配对表、统计、诊断图和核验输出位于results/pruning。它们不增加原任务数，也不替换原large的计时字段。
 
 ## 数据与计算契约
 

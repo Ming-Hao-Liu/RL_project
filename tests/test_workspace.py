@@ -23,6 +23,7 @@ SCRIPTS = (
     'time_initialization',
     'time_deep',
     'verify_research',
+    'pruning',
 )
 
 
