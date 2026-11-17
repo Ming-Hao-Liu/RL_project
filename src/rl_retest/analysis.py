@@ -48,6 +48,7 @@ def _rows(root):
                     continue
             rows.extend(records)
     if errors:
+        dump_json(root / 'analysis' / 'coverage.json', {'expected_jobs':len(jobs), 'invalid_jobs':errors})
         raise ValueError(f'{len(errors)} jobs missing, failed or mismatched; analysis requires complete coverage')
     return manifest, rows
 
@@ -71,7 +72,13 @@ def _paired(rows, left, right, samples, seed):
     for row in rows:
         key = (row['method'], row['memory'])
         if key in (left,right) and not row.get('scenario'):
+            if key in by_task[row['task_id']]:
+                raise ValueError('select one budget/scenario before pairing')
             by_task[row['task_id']][key] = row
+    if not any(left in v for v in by_task.values()) or not any(right in v for v in by_task.values()):
+        return None
+    if any(left not in v or right not in v for v in by_task.values()):
+        raise ValueError('incomplete pairs')
     cells = defaultdict(list)
     for values in by_task.values():
         if left in values and right in values:
@@ -106,7 +113,7 @@ def analyze(run_dir):
         groups[key].append(row)
     summary=[]
     for key, items in sorted(groups.items(),key=lambda x:str(x[0])):
-        times = [r['planning_seconds'] for r in items if not r['timing_contended']]
+        times = [r['planning_seconds'] for r in items if not r['timing_contended'] and 'alias_of' not in r]
         widths = [r['upper']-r['lower'] for r in items if r['upper'] is not None and r['lower'] is not None]
         bias = [r['model_value']-r['expected_utility'] for r in items if r['model_value'] is not None]
         summary.append(dict(zip(('method','memory','scenario','budget','epsilon','prune','assumed_current'),key)) | {
@@ -169,7 +176,7 @@ def analyze(run_dir):
             for comparison, color in [('reset','C0'),('misread','C1')]:
                 points=[]
                 for probability in probabilities:
-                    subset=[r for r in rows if r['parameters']['cost']==cost and r['parameters']['p_c_current']==probability]
+                    subset=[r for r in rows if r['parameters']['n']==3 and r['parameters']['cost']==cost and r['parameters']['p_c_current']==probability]
                     estimate=_paired(subset,('exact','correct'),('exact',comparison),
                                      manifest['config']['bootstrap_samples'],manifest['config']['seeds']['bootstrap'])
                     if estimate: points.append((probability,estimate))
@@ -251,6 +258,6 @@ def analyze(run_dir):
             'config_sha256':manifest['config_sha256'],'planning_source_sha256':manifest['source_sha256'],
             'analysis_source_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             'analysis_numpy':np.__version__,
-            'comparisons':comparisons, 'timing_note':'Only uncontended single-worker timing is summarized.'}
+            'comparisons':comparisons, 'timing_note':'Single-worker observed timing; external contention is not measured; aliases excluded.'}
     dump_json(out / 'coverage.json',result)
     return result

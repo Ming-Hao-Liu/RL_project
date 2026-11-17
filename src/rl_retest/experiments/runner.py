@@ -209,6 +209,14 @@ def verify(root):
     root = Path(root)
     manifest, tasks, jobs = _load(root)
     errors = []
+    exact = {}
+    def model_key(row):
+        return row['task_id'], row['memory'], row.get('assumed_current')
+    for file in (root / 'records').glob('*.jsonl'):
+        for row in read_jsonl(file):
+            if row.get('method') == 'exact' and row.get('model_value') is not None:
+                exact[model_key(row)] = row['model_value']
+    certificate_checks = 0
     for job in jobs:
         path = root / 'records' / f"{job['job_id']}.jsonl"
         if not path.exists():
@@ -259,9 +267,15 @@ def verify(root):
                     errors.append(f"{job['job_id']}: lower bound mismatch")
                 if record['upper'] is not None and model_value > record['upper'] + 1e-10:
                     errors.append(f"{job['job_id']}: upper bound below policy")
+            reference = exact.get(model_key(record))
+            if record.get('method') == 'bounded' and reference is not None:
+                certificate_checks += 1
+                tolerance = 1e-10 * max(1, truth.spec.reward + truth.spec.horizon * truth.spec.cost)
+                if not record['lower'] - tolerance <= reference <= record['upper'] + tolerance:
+                    errors.append(f"{job['job_id']}: exact value outside certificate")
             if 'budget' in record and record['evaluations'] > record['budget']:
                 errors.append(f"{job['job_id']}: budget exceeded")
             if (record['status'] == 'tolerance' and record['upper'] is not None and
                     record['upper'] - record['lower'] > record['epsilon'] * truth.spec.reward + 1e-10):
                 errors.append(f"{job['job_id']}: tolerance not achieved")
-    return {'expected':len(jobs), 'errors':errors, 'valid':not errors}
+    return {'expected':len(jobs), 'errors':errors, 'valid':not errors, 'certificate_checks':certificate_checks}
