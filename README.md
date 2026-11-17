@@ -10,7 +10,7 @@
 - [证据索引](docs/evidence.md)：研究结论对应的数据和图表。
 - [验证说明](docs/validation.md)：检查范围、实际结果及计时口径。
 - [项目架构](docs/architecture.md)：模块职责、接口和依赖方向。
-- [交接材料](docs/handoff.md)：选图、问答和实际贡献说明。
+- [交接材料](docs/handoff.md)：冻结结论、材料导航、批次口径和贡献说明。
 - [原始提案](docs/references/Proposal.md)与[课程要求](docs/references/Project_Requirements.md)：原文及译文，作为来源材料保留。
 
 ## 目录
@@ -40,7 +40,7 @@ export XDG_CACHE_HOME="$PWD/.cache"
 export MPLCONFIGDIR="$PWD/.cache/matplotlib"
 export TMPDIR="$PWD/.tmp"
 export PYTHONDONTWRITEBYTECODE=1
-export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1
+export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1
 uv sync --locked --group dev
 uv run pytest
 ```

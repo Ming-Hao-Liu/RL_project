@@ -8,13 +8,15 @@
 | history | 历史收益的终止奖励／测试成本分解 | `scripts.analyze_history` |
 | sequential | 序贯收益频率分解、解析后验及成本边界 | `scripts.analyze_sequential` |
 | search | 策略质量、自然成本、证书、容差诊断记录及完整策略 | `scripts.diagnose_tolerance`、`scripts.analyze_search` |
-| validation | 独立评价、更新计数、数据完整性及流程验证 | `scripts.review_evidence`、测试与 CLI 验证 |
+| validation | 原基准独立评价、更新计数、数据完整性及流程验证 | `scripts.review_evidence`、测试与 CLI 验证 |
+| planning | 独立初始化确认及匹配计时 | `scripts.analyze_planning`、`scripts.verify_planning` |
+| research | A–D机制/校准分析、深任务完整比较、研究冻结清单 | `scripts.analyze_mechanisms`、`scripts.analyze_calibration`、`scripts.verify_research` |
 
 CSV 是可读取的数值表；PDF 是矢量图，PNG 是同图预览，两种格式不是两个实验。JSON／JSONL 保存协议、来源和完整策略。各分析目录的 README 解释对应输出，研究结论统一见 `../docs/report.md` 和 `../docs/evidence.md`。
 
 输入来自 `../data/`。固定任务上的成本和容差诊断单独标记，不能当作新的随机确认样本。重建命令见项目 README；容差诊断先于搜索分析执行。
 
-`validation/data_integrity.json` 列出正式原始文件的 SHA256；`validation/workspace_checks.json` 记录当前代码测试、数据复算、数值一致性和独立目录检查的范围。文件存在性和摘要检查不代替数学证明或算法验证。
+`validation/data_integrity.json` 列出正式原始文件的 SHA256；`validation/workspace_checks.json` 记录原基准整理时的测试、数据复算、数值一致性和独立目录检查范围；最新工作区与研究冻结状态以`research/release.json`为准。文件存在性和摘要检查不代替数学证明或算法验证。
 
 `planning/` 是独立初始化确认分析：effects保存预定主比较和次要区间，paired_tasks分解上下界与策略增益，costs保留全部结束状态，timing汇总匹配任务的重复计时。两幅PDF/PNG展示质量/成本与初始化后检查点。使用`python -m scripts.analyze_planning`重建，固定策略验证入口为`scripts.verify_planning`。
 

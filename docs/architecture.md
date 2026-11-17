@@ -17,6 +17,7 @@ src/rl_retest/
     bounded.py             上下界搜索及检查点
   experiments/
     tasks.py               实验配置、任务和记忆条件
+    calibration.py         合成校准与固定plug-in规划输入
     runner.py              规划、评价、并行、续跑和验证
     records.py             策略与结果编解码
   analysis.py              保存记录的统计与图表
@@ -36,6 +37,7 @@ cli → experiment runner → tasks / planners / evaluation / records
 cli → analysis → records
 planners → common / bounds / policy / model
 evaluation → policy / model
+calibration → tasks / model
 tasks → model
 records → policy
 bounds → model
@@ -60,7 +62,7 @@ bounds → model
 
 `rl-retest prepare` 冻结配置、任务与作业；`run` 规划并评价；`verify` 从完整策略复算；`analyze` 读取结果生成表图。每个作业独占输出分片，原子写入；续跑保留成功记录。多预算轨迹保存不可变检查点，理论等价的方法标记来源后复用计算。
 
-[study.json](../configs/study.json) 是可执行研究参数来源；正式运行以各自 manifest 内的配置快照为准。manifest 保存任务、作业、配置、依赖锁和规划源码摘要。核心源码摘要按字节计算，覆盖模型、策略、上界、评价、规划器和实验模块；改变这些文件后须建立新运行，不能改写已有来源摘要。分析脚本版本单独记录。
+[study.json](../configs/study.json)、[planning.json](../configs/planning.json)和[research.json](../configs/research.json)分别定义原基准、独立初始化确认、机制与校准实验；正式运行以各自 manifest 内的配置快照为准。manifest 保存任务、作业、配置、依赖锁和规划源码摘要。核心源码摘要按字节计算，覆盖模型、策略、上界、评价、规划器和实验模块；改变这些文件后须建立新运行，不能改写已有来源摘要。分析脚本版本单独记录。
 
 `data/` 和 `results/` 各保留一份规范内容，只有目录说明纳入 Git；原始数据、派生输出、环境和缓存均留在项目内。本地数据格式与目录说明见[数据入口](../data/README.md)及[结果入口](../results/README.md)。
 
@@ -70,4 +72,4 @@ bounds → model
 
 `experiments/calibration.py`只负责合成已知类型校准计数、固定估计器与plug-in规划输入，不改变规划器接口。历史/未来单独误差条件在输入构造层完成。共享估计表的统计依赖保存在实验记录的size/repeat中；规划算法仍只接收固定PlanningProblem。
 
-`scripts/run_research.py`冻结机制/校准清单、独立作业与原子输出，复用现有DP和搜索；`analyze_mechanisms.py`/`analyze_calibration.py`从保存记录生成统计与分歧案例；`verify_research.py`固定策略复算并调用测试目录独立验证器。解析阈值案例由分析脚本调用已有DP验算，统计部分不触发重规划。`time_initialization.py`仅补测既有warm搜索；新增计时字段不改变动作选择、计数或预算。
+`scripts/run_research.py`冻结机制/校准清单、独立作业与原子输出，复用现有DP和搜索；`analyze_mechanisms.py`/`analyze_calibration.py`从保存记录生成统计与分歧案例；`verify_research.py`固定策略复算并调用测试目录独立验证器。解析阈值案例由分析脚本调用已有DP验算，统计部分不触发重规划。`time_initialization.py`仅补测既有warm搜索；新增计时字段不改变动作选择、计数或预算。`time_deep.py`补测既有24任务的五方法，保存独立匹配计时；`analyze_mechanisms.py`将其并入同任务质量/成本汇总。

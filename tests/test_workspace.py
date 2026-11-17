@@ -21,6 +21,7 @@ SCRIPTS = (
     'analyze_mechanisms',
     'analyze_calibration',
     'time_initialization',
+    'time_deep',
     'verify_research',
 )
 
