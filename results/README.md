@@ -15,3 +15,5 @@ CSV 是可读取的数值表；PDF 是矢量图，PNG 是同图预览，两种�
 输入来自 `../data/`。固定任务上的成本和容差诊断单独标记，不能当作新的随机确认样本。重建命令见项目 README；容差诊断先于搜索分析执行。
 
 `validation/data_integrity.json` 列出正式原始文件的 SHA256；`validation/workspace_checks.json` 记录当前代码测试、数据复算、数值一致性和独立目录检查的范围。文件存在性和摘要检查不代替数学证明或算法验证。
+
+`planning/` 是独立初始化确认分析：effects保存预定主比较和次要区间，paired_tasks分解上下界与策略增益，costs保留全部结束状态，timing汇总匹配任务的重复计时。两幅PDF/PNG展示质量/成本与初始化后检查点。使用`python -m scripts.analyze_planning`重建，固定策略验证入口为`scripts.verify_planning`。

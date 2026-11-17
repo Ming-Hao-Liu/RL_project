@@ -50,7 +50,7 @@ myopic用一步判断构造完整时域滚动策略；迭代加深交付截断�
 
 **限定条件下支持：** 主实验全部199个搜索非精确输出因正容差停止；相同M只改ε为0后199个达到exact，平均更新数27.96→253.88。B3另有308个已达到精确值的策略仍有正界宽。large n0 M10000平均界宽.029484，U−J(myopic)=.024811只是上界，并需额外搜索成本。
 
-199任务干预属于探索性诊断，不替换原排名，也不证明任意规模下取消容差即可在同M求精确值。large真实regret未知；新的下界初始化未测试。
+199任务干预属于探索性诊断，不替换原排名，也不证明任意规模下取消容差即可在同M求精确值。large真实regret未知；根节点初始化的独立确认见P4。
 
 证据：[干预协议](../results/search/tolerance_protocol.json)、[全部诊断记录](../results/search/tolerance_diagnostic.csv)、[完整策略](../results/search/tolerance_policies.jsonl)、[证书收敛](../results/search/certificate_convergence.csv)、[独立诊断复核](../results/validation/tolerance_review.json)。
 
@@ -67,3 +67,11 @@ myopic用一步判断构造完整时域滚动策略；迭代加深交付截断�
 规划器不接触隐藏类型，评价器执行完整冻结策略，M统计全部实际后继更新。18个预定设置的51策略独立有理数评价最大误差3.33e-16，六种方法的实际更新调用数与记录一致。计时包含上下文初始化；单worker不证明无争抢；别名排除后不同方法的计时任务覆盖可能不同，不据此作跨记忆或混合网格纯速度排名。
 
 证据：[验证说明](validation.md)、[独立检查](../results/validation/checks.json)、[更新计数](../results/validation/transition_accounting.json)。
+
+## P4：强策略初始化与额外搜索
+
+**限定条件下支持：** 独立种子20261124、80个无历史任务、M10000/ε0，warm−cold宽度−.00450202，预定主要比较95% CI[−.00483372,−.00418280]。完整初始化平均540次更新；后续搜索无任务提高myopic效用，相对cold的最终上界差在浮点容差内为零。改善来自下界，不构成搜索发现更好策略的证据。初始化后继续搜索使上界平均下降.03814，但平均宽度仍.024449，所有无历史任务均未达到.01容差。
+
+计时为新任务中固定32个、四方法三次重复；无历史任务规划wall中位数cold/warm/myopic/blinkered=.5438/.5147/.00467/.01969秒。方法有相同输入与计时边界，结果仍限本机观测。M1000出现上界较cold更松的机会成本；M100按预设规则退回cold。80个有历史任务全部解析停止。
+
+**决策：** 保留这一对照解释认证代价，不增加下一变体或样本。追求效用时本分布支持采用便宜myopic；要求模型内上界时可以支付额外认证成本，不能声称已达到精确最优。证据：[配对效应](../results/planning/effects.csv)、[完整比较](../results/planning/paired_tasks.csv)、[计时](../results/planning/timing.csv)、[原始记录](../data/planning/manifest.json)。

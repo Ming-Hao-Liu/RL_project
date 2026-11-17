@@ -63,3 +63,5 @@ bounds → model
 [study.json](../configs/study.json) 是可执行研究参数来源；正式运行以各自 manifest 内的配置快照为准。manifest 保存任务、作业、配置、依赖锁和规划源码摘要。核心源码摘要按字节计算，覆盖模型、策略、上界、评价、规划器和实验模块；改变这些文件后须建立新运行，不能改写已有来源摘要。分析脚本版本单独记录。
 
 `data/` 和 `results/` 各保留一份规范内容，只有目录说明纳入 Git；原始数据、派生输出、环境和缓存均留在项目内。本地数据格式与目录说明见[数据入口](../data/README.md)及[结果入口](../results/README.md)。
+
+根节点初始化接口`solve_bounded_warm`返回普通PlanResult和初始化检查点。它复用同一TransitionCache调用滚动myopic；只允许单预算调用，避免较大预算初始化被较小预算检查点免费复用。原搜索默认接口保持不变。独立确认脚本使用带研究名和种子的任务ID，数据目录为data/planning，不与旧三组运行混存。

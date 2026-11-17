@@ -27,3 +27,7 @@
 原始 manifest、任务、作业和策略记录保持生成时字节内容；其中历史 Git/source 摘要是来源信息，不是当前仓库版本声明。文件摘要索引见 `../results/validation/data_integrity.json`，保存策略复算命令见项目 README。
 
 统计表与图表统一位于 `../results/`，不在本目录保存第二份分析输出。新增实验使用新的运行目录；不要覆盖这些正式数据。
+
+## planning：独立初始化确认
+
+新种子20261124，160个基础任务，2240条方法记录（每任务14条），另有32个任务×4方法×3次重复的384条计时。任务名包含研究名与种子；与原large组分开。manifest冻结新配置、源码和生成提交；records每任务一个JSON数组，timing.jsonl保存原始重复。此组不使用旧CLI作业格式；用`python -m scripts.verify_planning`复算，不能把其记录混入旧large汇总。

@@ -60,13 +60,26 @@ uv run rl-retest analyze --run-dir artifacts/dev
 
 正式运行使用 `main`、`large` 或 `stress` suite，并为每次新运行指定新的输出目录。`run` 检查冻结源码和配置，续跑只补齐未完成的作业；不要覆盖已有正式记录。`pruning` 是可执行的剪枝诊断配置，不属于已报告的三组正式实验。
 
-已有数据的完整策略复算：
+旧三组数据的严格复算使用其生成代码版本，避免改写来源摘要：
 
 ```sh
-uv run rl-retest verify --run-dir data/main
-uv run rl-retest verify --run-dir data/large
-uv run rl-retest verify --run-dir data/stress
+mkdir -p .tmp/original
+git archive 3382745 | tar -x -C .tmp/original
+PYTHONPATH="$PWD/.tmp/original/src" uv run python -m rl_retest.cli verify --run-dir data/main
+PYTHONPATH="$PWD/.tmp/original/src" uv run python -m rl_retest.cli verify --run-dir data/large
+PYTHONPATH="$PWD/.tmp/original/src" uv run python -m rl_retest.cli verify --run-dir data/stress
 ```
+
+新增初始化确认实验使用独立的配置与数据目录：
+
+```sh
+uv run python -m scripts.confirm_planning --out artifacts/planning-reproduction
+uv run python -m scripts.analyze_planning --source data/planning --out results/planning
+```
+
+已有确认数据的复算：`uv run python -m scripts.verify_planning`。上述运行命令创建复现副本，不把重复运行计为新样本。
+
+确认实验的配置见 `configs/planning.json`。保存清单严格核对源代码与生成提交；从零重建可先检出该清单记录的提交并使用新的输出目录，不覆盖已有数据。分析脚本可以在当前版本读取冻结记录。
 
 重新生成当前统计与机制结果：
 
