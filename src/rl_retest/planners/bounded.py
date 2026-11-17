@@ -4,7 +4,7 @@ from time import perf_counter
 from ..bounds import perfect_information
 from ..model import PlanningProblem, best_stop, outcome_probability
 from ..policy import Stop, Test
-from .common import TransitionCache, successor_state
+from .common import BudgetExhausted, TransitionCache, successor_state
 
 
 @dataclass(slots=True)
@@ -29,7 +29,7 @@ class _Node:
     outcome: int | None = None
 
 
-def solve_bounded_trace(problem: PlanningProblem, budgets, epsilons, *, prune: bool = True):
+def solve_bounded_trace(problem: PlanningProblem, budgets, epsilons, *, prune: bool = True, _seed_info=None):
     """Capture immutable policy snapshots for all budget/tolerance combinations in one run."""
     start = perf_counter()
     budgets, epsilons = tuple(sorted(set(budgets))), tuple(sorted(set(epsilons)))
@@ -118,6 +118,27 @@ def solve_bounded_trace(problem: PlanningProblem, budgets, epsilons, *, prune: b
         return n, n.choice, ancestors
 
     root = node((0,) * (2 * len(problem.belief)), problem.belief, spec.horizon)
+    if _seed_info is not None:
+        # A warm call has one total budget. Initialization shares the same cache
+        # and retains STOP if interrupted; unfinished policies are never returned.
+        if len(budgets) != 1:
+            raise ValueError('warm initialization requires a single total budget')
+        seed_start = perf_counter()
+        seed_status = 'analytic_stop' if root.upper <= root.lower else 'low_budget_cold'
+        if root.upper > root.lower and max(budgets) >= 1000:
+            from .dynamic import solve_lookahead
+            try:
+                seed = solve_lookahead(problem, 1, _cache=cache)
+                if seed.model_value > root.lower:
+                    root.lower, root.policy = seed.model_value, seed.policy
+                seed_status = 'complete'
+            except BudgetExhausted:
+                seed_status = 'incomplete'
+            refresh(root)
+        _seed_info.update(status=seed_status, evaluations=cache.stats.evaluations,
+                          lower=root.lower, upper=root.upper,
+                          seconds=perf_counter() - seed_start)
+
     def capture(target, status):
         snapshots[target] = (cache.result(root.policy, root.lower, root.lower, root.upper, status),
                              perf_counter() - start)
@@ -162,3 +183,15 @@ def solve_bounded_trace(problem: PlanningProblem, budgets, epsilons, *, prune: b
 
 def solve_bounded(problem: PlanningProblem, max_evaluations: int, epsilon: float, *, prune: bool = True):
     return solve_bounded_trace(problem, [max_evaluations], [epsilon], prune=prune)[(max_evaluations, epsilon)][0]
+
+
+def solve_bounded_warm(problem: PlanningProblem, max_evaluations: int, epsilon: float):
+    """Root myopic incumbent, fully billed; budgets below 1000 use cold search.
+
+    Returns a normal PlanResult and the initialization checkpoint. Only a
+    completed myopic construction guarantees dominance over full myopic.
+    """
+    initialization = {}
+    result = solve_bounded_trace(problem, [max_evaluations], [epsilon],
+                                 _seed_info=initialization)[(max_evaluations, epsilon)][0]
+    return result, initialization

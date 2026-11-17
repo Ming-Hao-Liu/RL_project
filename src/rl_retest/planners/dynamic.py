@@ -53,10 +53,10 @@ def solve_stop(problem: PlanningProblem):
     return cache.result(Stop(path), value, value)
 
 
-def solve_lookahead(problem: PlanningProblem, depth: int):
+def solve_lookahead(problem: PlanningProblem, depth: int, *, _cache=None):
     if depth < 1:
         raise ValueError('lookahead depth must be positive')
-    cache = TransitionCache(problem)
+    cache = TransitionCache(problem) if _cache is None else _cache
     bellman = _Bellman(problem, cache)
     spec = problem.spec
 

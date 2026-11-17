@@ -1,0 +1,11 @@
+{
+  "seed": 20261124,
+  "bootstrap_seed": 20261130,
+  "tasks_per_setting": 20,
+  "budgets": [100, 1000, 10000],
+  "epsilons": [0, 0.01],
+  "initialization": "Analytic STOP first; M<1000 uses cold search. Otherwise shared-cache full rolling myopic; interruption retains STOP and bills all work. Root incumbent only.",
+  "primary": "n=0, M=10000, epsilon=0: warm minus cold certificate width, setting-weighted paired 95% bootstrap",
+  "timing": {"indices": [0, 1, 2, 3], "repeats": 3, "budget": 10000, "epsilon": 0, "order_seed": 20261125},
+  "stop_rule": "One frozen cohort; no sample extension or second variant. Secondary comparisons explanatory."
+}
