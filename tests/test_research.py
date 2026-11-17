@@ -88,3 +88,24 @@ def test_cluster_interval_and_divergence():
     d=first_divergence(policy_to_data(a.policy),policy_to_data(b.policy),p)
     assert d['history']==[] and d['local_gain']==pytest.approx(.00309375)
     assert sum(x['probability'] for x in d['exact_branches'])==pytest.approx(1.)
+
+
+def test_deep_summary_separates_quality_certificates_and_cost():
+    from scripts.analyze_mechanisms import summarize_deep
+    methods=('exact','myopic','blinkered','cold','warm')
+    rows=[];timing=[]
+    for method in methods:
+        for i in range(2):
+            rows.append(dict(id=str(i),method=method,regret=.02 if method=='myopic' and i==0 else 0.,
+                             width=.01 if method=='cold' and i==0 else 0.,evaluations=10+i))
+            for repeat in range(3):
+                timing.append(dict(id=str(i),method=method,repeat=repeat,planning_seconds=.001*(i+1)))
+    by={r['method']:r for r in summarize_deep(rows,timing)}
+    assert by['myopic']['optimal_tasks']==1
+    assert by['myopic']['mean_regret']==pytest.approx(.01)
+    assert by['myopic']['conditional_mean_regret']==pytest.approx(.02)
+    assert by['cold']['optimal_tasks']==2 and by['cold']['closed_certificates']==1
+    assert by['cold']['optimal_but_uncertified']==1
+    assert by['exact']['closed_certificates']==''
+    assert by['exact']['conditional_mean_regret']==''
+    assert by['warm']['planning_median_seconds']==pytest.approx(.0015)

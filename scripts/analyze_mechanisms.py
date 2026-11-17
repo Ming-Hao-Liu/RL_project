@@ -140,6 +140,41 @@ def first_divergence(a,b,problem):
     return None
 
 
+def summarize_deep(rows, timing=None):
+    """Same-task quality, certificates and matched planning cost, separately."""
+    summary=[]
+    methods=('exact','myopic','blinkered','cold','warm')
+    ids={r['id'] for r in rows}
+    assert len(rows)==len(ids)*len(methods)
+    for method in methods:
+        rr=[r for r in rows if r['method']==method]
+        assert {r['id'] for r in rr}==ids and len(rr)==len(ids)
+        positive=[r['regret'] for r in rr if r['regret']>TOL]
+        bounded=method in ('cold','warm')
+        item=dict(method=method,tasks=len(rr),optimal_tasks=sum(r['regret']<=TOL for r in rr),
+            positive_regret=len(positive),mean_regret=float(np.mean([r['regret'] for r in rr])),
+            max_regret=max(r['regret'] for r in rr),
+            conditional_mean_regret=float(np.mean(positive)) if positive else '',
+            mean_evaluations=float(np.mean([r['evaluations'] for r in rr])),
+            max_evaluations=max(r['evaluations'] for r in rr),
+            closed_certificates=sum(r['width']<=TOL for r in rr) if bounded else '',
+            exactly_closed_certificates=sum(r['width']==0 for r in rr) if bounded else '',
+            max_width=max(r['width'] for r in rr) if bounded else '',
+            optimal_but_uncertified=sum(r['regret']<=TOL and r['width']>TOL for r in rr) if bounded else '')
+        if timing is not None:
+            tt=[r for r in timing if r['method']==method]
+            assert len(tt)==3*len(ids) and {r['id'] for r in tt}==ids
+            values=[]
+            for tid in sorted(ids):
+                repeats=[r for r in tt if r['id']==tid]
+                assert {r['repeat'] for r in repeats}=={0,1,2}
+                values.append(np.median([r['planning_seconds'] for r in repeats]))
+            item.update(planning_median_seconds=float(np.median(values)),planning_p90_seconds=float(np.quantile(values,.9)),
+                        timing_tasks=len(ids),timing_repeats=3)
+        summary.append(item)
+    return summary
+
+
 def mechanisms(source,out):
     root=source/'research';jobs=read_jsonl(root/'jobs.jsonl')
     grid=[];deep=[];cases=[]
@@ -162,6 +197,13 @@ def mechanisms(source,out):
                 if r['method']!='exact':
                     cases.append(dict(id=job['id'],method=r['method'],divergence=first_divergence(e['policy'],r['policy'],p)))
     assert len(grid)==1329 and len(deep)==120
+    timing_path=root/'deep_timing.json'
+    timing=read_json(timing_path)['records'] if timing_path.exists() else None
+    if timing is not None:
+        for row in deep:
+            repeats=[r for r in timing if (r['id'],r['method'])==(row['id'],row['method'])]
+            assert len(repeats)==3 and {r['repeat'] for r in repeats}=={0,1,2}
+            row['planning_median_seconds']=float(np.median([r['planning_seconds'] for r in repeats]))
     write_csv(out/'grid.csv',grid);write_csv(out/'deep.csv',deep);dump_json(out/'deep_divergences.json',cases)
     grid_summary=[]
     for h in (1,2,3):
@@ -183,14 +225,7 @@ def mechanisms(source,out):
             fig.colorbar(im,ax=axes[row,col],ticks=(0,1,2) if row==0 else None)
         axes[0,col].set_title(f'B={h}: 0 fallback, 1 test, 2 execute');axes[1,col].set_title('Exact minus rolling myopic')
     fig.tight_layout();fig.savefig(out/'mechanism_grid.png',dpi=150);plt.close(fig)
-    summary=[]
-    for method in ('myopic','blinkered','cold','warm'):
-        rr=[r for r in deep if r['method']==method]
-        summary.append(dict(method=method,tasks=len(rr),positive_regret=sum(r['regret']>TOL for r in rr),
-            mean_regret=np.mean([r['regret'] for r in rr]),max_regret=max(r['regret'] for r in rr),
-            mean_evaluations=np.mean([r['evaluations'] for r in rr]),
-            optimal_but_uncertified=sum(r['regret']<=TOL and r['width']!='' and r['width']>TOL for r in rr)))
-    write_csv(out/'deep_summary.csv',summary)
+    write_csv(out/'deep_summary.csv',summarize_deep(deep,timing))
 
 
 def main(source,out):

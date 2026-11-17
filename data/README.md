@@ -53,3 +53,5 @@
 阶段计时中`root_setup_seconds`包含根上界及动作结构，`myopic_seconds`为种子策略构造，`initialization_management_seconds`为其余初始化，`search_seconds`为后续计算；`total_seconds`逐条等于四者之和，`planning_wall`还包含调用包装和返回开销。`evaluations`为初始化更新，`search_evaluations`与其相加为`total_evaluations`。中位数分别计算，不能相加。
 
 校准随机性单位是repeat；同一估计表的36任务不独立。机制网格点是确定性覆盖，不是总体抽样。每个固定策略价值是精确期望而非执行蒙特卡洛。核验入口`python -m scripts.verify_research`，哈希索引在`results/research/input_sha256.json`。
+
+`research/deep_timing.json`补齐同24深任务、五方法、每方法三次的360条单进程计时。文件在测量前固定重复数、顺序种子2026111703、任务ID、预算10000和ε0；方法顺序随机，输入预先构造，缓存每次独立，数值库单线程。每条记录的策略、模型价值、界和更新数已与原机制记录核对。保存规划和评价耗时，不把双进程批处理耗时混入此组。它不增加基础任务或校准重复数。

@@ -21,3 +21,5 @@ CSV 是可读取的数值表；PDF 是矢量图，PNG 是同图预览，两种�
 `research/` 保存当前A–D扩展：`search_attribution*`为已有独立批次的初始化/搜索分账；`threshold_cases*`为精确重测案例；`difficulty*`为原3240任务的H/D分类；`grid*`、`deep*`为固定机制任务；`calibration*`为有限校准原始估计表的整理、聚类统计、误差归因和动作案例；`phase_timing.csv`为8固定任务的分阶段计时。`verification.json`记录保存策略及独立枚举检查，`input_sha256.json`记录本轮全部原始文件摘要，`release.json`与`reproduction.json`记录版本及隔离复现范围。生成脚本分别为`analyze_mechanisms`、`analyze_calibration`、`verify_research`。
 
 新基础诊断图为PNG：`difficulty.png`、`mechanism_grid.png`、`calibration.png`，均由同目录完整数值表生成。校准区间按30个独立校准重复聚类，只描述固定36任务上的校准随机性；机制网格及24个深任务不附虚构的随机总体区间。
+
+`research/deep_summary.csv`为24深任务的最终五方法汇总：最优任务数、平均/最大/非零条件平均损失、更新成本、匹配规划时间中位数/P90及搜索证书闭合数分别列出。条件正损失子群为空时字段留空；不把DP的相同上下界字段计作搜索证书。逐任务`deep.csv`的`planning_median_seconds`来自同任务三次重复中位数，汇总再跨24任务取中位数/P90。原始匹配计时在`data/research/deep_timing.json`，现有分析入口自动读取；没有该文件时不生成耗时结论。

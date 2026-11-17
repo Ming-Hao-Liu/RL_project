@@ -119,3 +119,23 @@ uv run python -m scripts.analyze_calibration --source data --out results/researc
 `run_research`按作业原子保存、支持续跑，`--group grid|deep|calibration`可选固定子组；冻结清单要求配置和数值源码相同，运行顺序不改变任务或校准表。上述分析入口读取`<source>/main`、`<source>/planning`和`<source>/research`。重建副本的分析可将三个组放在同一新的source根目录下（main/planning复用原始目录的符号链接即可），不改写正式目录。
 
 阶段计时可独立执行`uv run python -m scripts.time_initialization --out artifacts/phase-timing-reproduction.json`。它只重测8个规定任务、三次重复，核对保存策略和计数，不增加统计样本。受控计时请在本项目批处理结束后运行。原始正式A–D源码版本为`75ed79b`；分析与复核脚本随当前HEAD保存，完整来源由`data/research/manifest.json`和`results/research/release.json`关联。数据继续保持本地未压缩、不进入Git。
+
+## 研究冻结与版本对应
+
+研究基准版本`db37d68`保留；当前HEAD完成强基线、匹配耗时及结论口径收尾，不扩展研究矩阵。[统一研究说明](docs/report.md)第5.3节与[完整同任务表](results/research/deep_summary.csv)是深任务最终比较，`deep.csv`提供每个任务的五方法记录和匹配计时。
+
+| 证据批次 | 范围 | 来源与复算 |
+|---|---|---|
+| 原基准main/large/stress | 3240主任务、160大任务及40复用压力任务 | manifest记录生成时HEAD `4672e95`与实际源码哈希；可恢复的同源码快照`3382745`用于严格复算 |
+| 独立planning确认 | 新种子20261124的160任务 | `6413033`，与旧large分开汇总 |
+| research机制与校准 | 1329网格、24深任务、36复用任务上的120校准重复 | 数值源码`75ed79b`，研究说明基准`db37d68`，当前HEAD完善汇总 |
+| 深任务匹配计时 | 同24任务×5方法×3重复 | `scripts/time_deep.py`及`data/research/deep_timing.json`；不是新增任务 |
+
+已有正式计时直接由分析器读取，不必重跑。需要复现计时时，批处理结束后单独执行：
+
+```sh
+export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1
+uv run python -m scripts.time_deep --source data --out artifacts/deep-timing-reproduction.json
+```
+
+完整研究材料以`results/research/release.json`关联最终源码提交、配置、数据和结果哈希；`SHA256SUMS`校验该目录输出。Git不包含大结果，交接需同时保留本地data/results目录。数据生成版本不被当前文档版本覆盖，旧批次的均值不混入新批次排名。
