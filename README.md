@@ -5,6 +5,7 @@
 ## 项目入口
 
 - [研究正文](docs/report.md)：问题、方法、结果及讨论。
+- [强化学习视角](docs/report.md#rl-view)：信念状态MDP、价值函数、策略求解，以及与策略迭代的区别。
 - [实验协议](docs/protocol.md)：模型、配置、评价与统计口径。
 - [理论说明](docs/theory.md)：推导、假设与边界。
 - [证据索引](docs/evidence.md)：研究结论对应的数据和图表。
