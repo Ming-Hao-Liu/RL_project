@@ -10,6 +10,7 @@
 | search | 策略质量、自然成本、证书、容差诊断记录及完整策略 | `scripts.diagnose_tolerance`、`scripts.analyze_search` |
 | validation | 原基准独立评价、更新计数、数据完整性及流程验证 | `scripts.review_evidence`、测试与 CLI 验证 |
 | planning | 独立初始化确认及匹配计时 | `scripts.analyze_planning`、`scripts.verify_planning` |
+| pruning | 既有20任务的显式剪枝消融、匹配计时与配对统计 | `scripts.pruning analyze` |
 | research | A–D机制/校准分析、深任务完整比较、研究冻结清单 | `scripts.analyze_mechanisms`、`scripts.analyze_calibration`、`scripts.verify_research` |
 
 CSV 是可读取的数值表；PDF 是矢量图，PNG 是同图预览，两种格式不是两个实验。JSON／JSONL 保存协议、来源和完整策略。study/history/sequential/search/planning/validation的README解释对应输出；research的文件分组在本文说明，研究结论统一见 `../docs/report.md` 和 `../docs/evidence.md`。
@@ -28,7 +29,7 @@ CSV 是可读取的数值表；PDF 是矢量图，PNG 是同图预览，两种�
 
 ## 有效性、旧记录与清理边界
 
-当前七个子目录均服务于已报告的研究或验证；本次检查132个文件，未发现空文件或临时残留。planning/research现有SHA256清单全部匹配。原基准分析的字段及复算范围见[验证说明](../docs/validation.md)，本次没有重跑实验或统计分析。
+剪枝补充前的七个子目录均服务于已报告的研究或验证；对应检查覆盖132个文件，未发现空文件或临时残留。planning/research现有SHA256清单全部匹配。原基准分析的字段及复算范围见[验证说明](../docs/validation.md)，本次没有重跑实验或统计分析。
 
 | 容易误认为冗余的产物 | 当前用途与使用限制 |
 |---|---|
@@ -41,4 +42,10 @@ CSV 是可读取的数值表；PDF 是矢量图，PNG 是同图预览，两种�
 
 validation的补充文件职责：`formal_verification.json`汇总原基准策略复算，`analysis_consistency.json`核对分析数值，`portability.json`记录隔离环境复现，`data_integrity.json`索引原始文件，`workspace_checks.json`汇总对应阶段检查。它们与当前清单并存是证据来源关系，不是多份当前报告。
 
-本次未发现应删除的失效产物；已补齐上述用途及限制。表格与图可以按[使用说明](../docs/usage.md)重建，来源清单、原始诊断策略和验证记录一并保留，不能将整个results目录当作临时缓存删除。
+原七组未发现应删除的失效产物；新增pruning组的用途及限制见下文。表格与图可以按[使用说明](../docs/usage.md)重建，来源清单、原始诊断策略和验证记录一并保留，不能将整个results目录当作临时缓存删除。
+
+## pruning：Proposal 剪枝速度承诺的补充证据
+
+`paired_tasks.csv`保留20任务的两方法策略一致性、界、计数和三次匹配计时的任务内中位数；`summary.csv`给出几何平均开启/关闭耗时比及95%配对区间、绝对耗时差、wall/CPU中位数和P90。`comparison.png`展示同任务耗时与计数变化。`verification.json`记录40条策略复算、120条匹配测量及原开启剪枝记录的重现。`provenance.json`、`input_sha256.json`和`SHA256SUMS`关联输入、协议和源码。
+
+这是一组既有样本上的消融，重采样单位为20个任务，不是120条测量。关闭显式剪枝仍保留最大上界优先规则；动作处理次数减少不等于全部循环或CPU工作同比减少。结果限定该实现、任务切片与本机计时，不推广为剪枝普遍有效或无效。

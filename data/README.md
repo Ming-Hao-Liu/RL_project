@@ -60,9 +60,22 @@
 
 ## 当前文件核对与保留规则
 
-本次核对覆盖全部24,914个原始文件（不含本README）：与三个哈希索引逐项一致，无缺失、无额外文件、无摘要不一致，也没有空文件或临时文件。索引分别为[原基准](../results/validation/data_integrity.json)、[独立确认](../results/planning/input_sha256.json)和[机制/校准](../results/research/input_sha256.json)。这是文件完整性检查；策略正确性的复算范围见[验证说明](../docs/validation.md)。
+剪枝补充前的五组数据共24,914个原始文件（不含本README），已核对：与三个哈希索引逐项一致，无缺失、无额外文件、无摘要不一致，也没有空文件或临时文件。索引分别为[原基准](../results/validation/data_integrity.json)、[独立确认](../results/planning/input_sha256.json)和[机制/校准](../results/research/input_sha256.json)。这是文件完整性检查；策略正确性的复算范围见[验证说明](../docs/validation.md)。
 
-- 原基准的`planning_seconds`保留生成时口径，部分包含输入初始化，不能直接用于公平速度排名。比较耗时使用`planning/timing.jsonl`、`research/phase_timing.json`和`research/deep_timing.json`中的匹配测量，各自的任务与计时边界不同。
+- 原基准的`planning_seconds`保留生成时口径，部分包含输入初始化，不能直接用于公平速度排名。比较耗时使用`planning/timing.jsonl`、`research/phase_timing.json`、`research/deep_timing.json`和`pruning/timing.json`中的匹配测量，各自的任务与计时边界不同。
 - 达到容差、耗尽预算、零收益、零损失和负面实验结果都是有效研究记录；不能因未达到最优或没有支持预期结论而删除。
 - manifest中的旧提交和配置是原始来源记录，需要保留；当前研究说明与版本入口见[README](../README.md)和[发布清单](../results/research/release.json)。
-- 本次未发现需要删除的原始产物。Git只保存本说明，交接时须同时携带本目录中的数据，不能依赖Git恢复。
+- 原五组数据未发现需要删除的原始产物；下述剪枝组独立保存。Git只保存本说明，交接时须同时携带本目录中的数据，不能依赖Git恢复。
+
+## pruning：既有任务的显式剪枝消融
+
+复用large中K=40、B=6、n=0的全部20任务，原种子20261123；任务ID、先验、历史与参数逐项相同，不新增独立任务。固定correct、STOP下界初始化、M=10000、ε=0.01，仅改变`prune`开关。
+
+- `manifest.json`、`tasks.jsonl`、`jobs.jsonl`：冻结来源与40个方法作业。
+- `records/`：40条完整策略、上下界、真实效用、状态与计数。
+- `verification.json`：固定策略复算；此组没有精确最优参照，不能把复算成功当作最优性证明。
+- `timing.json`：20任务×2方法×3次的120条单进程匹配计时，提前保存协议、平衡顺序、线程限制、源码/依赖/输入摘要；每对完成后原子保存，恢复只补缺失配对。完整策略在records中，计时保存对应策略哈希及科学字段一致性。
+
+正式记录中的`planning_seconds`沿用通用runner的输入初始化口径；速度比较只用timing.json中的`planning_wall`与`planning_cpu`。输入构造、真实评价及落盘不计入匹配规划耗时，规划内部初始化、标记与回传全部计入。`action_scans`只计未跳过的候选/回传动作处理，不包括全部列表遍历或剪枝标记比较。
+
+结果与哈希见[剪枝汇总](../results/pruning/summary.csv)和[输入索引](../results/pruning/input_sha256.json)，运行命令见[使用说明](../docs/usage.md)。

@@ -82,7 +82,7 @@ uv run python -m scripts.pruning time --source data/pruning --out data/pruning/t
 uv run python -m scripts.pruning analyze --source data/pruning --out results/pruning
 ```
 
-prepare/run/verify复用原CLI；time先核对与原large的任务及开启剪枝结果，再保存冻结顺序和120条测量；analyze只读取保存记录，不重新规划。复现分析可以把最后一条的输出改为`artifacts/pruning-analysis-reproduction`。新一轮计时应使用独立输出文件，不能覆盖正式测量；同一文件的续跑只补缺失配对。完整策略、来源清单和原始计时位于data/pruning，配对表、统计、诊断图和核验输出位于results/pruning。它们不增加原任务数，也不替换原large的计时字段。
+本组已完成；现有结果直接读取或重建分析，不重复运行。代码冻结版本为`b39a11c`。prepare/run/verify复用原CLI；time先核对与原large的任务及开启剪枝结果，再保存冻结顺序和120条测量；analyze只读取保存记录，不重新规划。复现分析可以把最后一条的输出改为`artifacts/pruning-analysis-reproduction`。从零复现使用新目录，如`artifacts/pruning-reproduction/pruning`，并在其父目录建立指向原`data/large`的`large`符号链接，供输入与旧结果核对。新一轮计时应使用独立输出文件，不能覆盖正式测量；同一文件的续跑只补缺失配对。完整策略、来源清单和原始计时位于data/pruning，配对表、统计、诊断图和核验输出位于results/pruning。它们不增加原任务数，也不替换原large的计时字段。
 
 ## 数据与计算契约
 
@@ -112,13 +112,14 @@ uv run python -m scripts.analyze_calibration --source data --out results/researc
 
 ## 研究冻结与版本对应
 
-研究基准版本`db37d68`保留，研究冻结提交为`53659a9`；后续文档整理不改变实验矩阵或数值源码。[统一研究说明](report.md)第5.3节与[完整同任务表](../results/research/deep_summary.csv)是深任务最终比较，`deep.csv`提供每个任务的五方法记录和匹配计时。
+研究基准版本`db37d68`与研究冻结提交`53659a9`保留；`b39a11c`增加原承诺内的剪枝消融脚本与协议，生产规划算法和既有实验记录不变。[统一研究说明](report.md)第5.3节与[完整同任务表](../results/research/deep_summary.csv)是深任务最终比较，`deep.csv`提供每个任务的五方法记录和匹配计时。
 
 | 证据批次 | 范围 | 来源与复算 |
 |---|---|---|
 | 原基准main/large/stress | 3240主任务、160大任务及40复用压力任务 | manifest记录生成时HEAD `4672e95`与实际源码哈希；可恢复的同源码快照`3382745`用于严格复算 |
 | 独立planning确认 | 新种子20261124的160任务 | `6413033`，与旧large分开汇总 |
 | research机制与校准 | 1329网格、24深任务、36复用任务上的120校准重复 | 数值源码`75ed79b`，研究说明基准`db37d68`，冻结汇总见`53659a9` |
+| 剪枝消融 | 同20个large任务、40条策略及120条匹配计时 | `b39a11c`；`scripts.pruning`，只新增显式剪枝成本对照 |
 | 深任务匹配计时 | 同24任务×5方法×3重复 | `scripts/time_deep.py`及`data/research/deep_timing.json`；不是新增任务 |
 
 已有正式计时直接由分析器读取，不必重跑。需要复现计时时，批处理结束后单独执行：
