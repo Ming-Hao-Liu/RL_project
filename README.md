@@ -1,23 +1,36 @@
 # RL Project
 
-有限时域贝叶斯决策研究：能力改变后如何解释历史测试，并在成本与计算预算下决定是否重测。
+有限时域贝叶斯决策研究：能力改变后如何解释历史测试，并在测试成本与规划计算预算下决定是否重测。
 
-第二版交付（2026-11-17）：[报告正文](docs/report_v2.md) · [结论—证据—决策台账](EVIDENCE_LEDGER.md) · [PPT交接](docs/ppt_handoff_v2.md) · [成果包](artifacts/handoff-v2-20261117/README.md) · [下载ZIP](artifacts/handoff-v2-20261117.zip)。第二版保留全部原始实验，新增机制分析、针对性诊断及技术/报告审阅。
+## 项目入口
 
-每轮影响决策的实验后，记录它支持的断言、效应及误差、替代解释和下一步。随机任务平均差使用逐比较95%配对区间；精确计算核验数值误差；探索性分层不写成一般规律。证据不足时选择针对性验证或收窄断言，不按显著性追加样本。具体规则见[研究冲刺协议](RL_PROJECT_RESEARCH_SPRINT.md)。
+- [研究正文](docs/report.md)：问题、方法、结果及讨论。
+- [实验协议](docs/protocol.md)：模型、配置、评价与统计口径。
+- [理论说明](docs/theory.md)：推导、假设与边界。
+- [证据索引](docs/evidence.md)：研究结论对应的数据和图表。
+- [验证说明](docs/validation.md)：检查范围、实际结果及计时口径。
+- [项目架构](docs/architecture.md)：模块职责、接口和依赖方向。
+- [交接材料](docs/handoff.md)：选图、问答和实际贡献说明。
+- [原始提案](docs/references/Proposal.md)与[课程要求](docs/references/Project_Requirements.md)：原文及译文，作为来源材料保留。
 
-- [研究计划、实验协议与验收](Guideline.md)
-- [项目架构、模块边界与数据流](docs/architecture.md)
-- [完整架构计划（存档）](docs/architecture-plan.md)
-- [理论证明](docs/theory.md)
-- [验证状态与结果索引](docs/results.md)
-- [贡献记录](docs/contributions.md)
-- [原项目提案](Proposal.md)
-- [课程项目要求](Project_Requirements.md)
+## 目录
 
-## 环境
+```text
+src/rl_retest/    模型、策略、规划、评价和实验流程
+tests/           独立枚举、算法、数据流程和架构检查
+configs/         可执行研究配置
+scripts/         正式数据分析、机制诊断和独立复核入口
+docs/            当前研究与工程说明
+data/            一份正式任务和完整策略记录（本地，不纳入 Git）
+results/         一份统计表、图表、诊断与验证结果（本地，不纳入 Git）
+artifacts/       新运行的临时输出，默认忽略
+```
 
-需要 uv 和 Python 3.11。以下变量将项目产生的环境、缓存和临时文件保留在项目目录；在项目根目录执行：
+[数据说明](data/README.md)解释任务、作业、记录及来源摘要；[结果说明](results/README.md)说明各输出的用途。Git 只跟踪这两个目录的 README，不包含实验数据或生成图表。新克隆需要获得数据目录，或按冻结配置重新运行实验。
+
+## 环境与测试
+
+需要 uv 和 Python 3.11。在项目根目录执行，环境、缓存和临时文件均留在项目内：
 
 ```sh
 mkdir -p .cache/uv .cache/python .cache/matplotlib .tmp
@@ -26,11 +39,17 @@ export UV_PYTHON_INSTALL_DIR="$PWD/.cache/python"
 export XDG_CACHE_HOME="$PWD/.cache"
 export MPLCONFIGDIR="$PWD/.cache/matplotlib"
 export TMPDIR="$PWD/.tmp"
+export PYTHONDONTWRITEBYTECODE=1
+export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1
 uv sync --locked --group dev
 uv run pytest
 ```
 
-## 实验入口
+项目的 `.venv` 可能依赖 `.cache/python` 中的解释器，清理缓存时保留该目录。
+
+## 执行与复现
+
+生成新任务、执行或续跑、验证策略、生成单组分析：
 
 ```sh
 uv run rl-retest prepare --config configs/study.json --suite dev --out artifacts/dev
@@ -39,134 +58,33 @@ uv run rl-retest verify --run-dir artifacts/dev
 uv run rl-retest analyze --run-dir artifacts/dev
 ```
 
-正式实验使用相同入口和冻结配置。`artifacts/` 包含可续跑的任务、原始结果和生成的表图；该目录默认不纳入 Git。
+正式运行使用 `main`、`large` 或 `stress` suite，并为每次新运行指定新的输出目录。`run` 检查冻结源码和配置，续跑只补齐未完成的作业；不要覆盖已有正式记录。`pruning` 是可执行的剪枝诊断配置，不属于已报告的三组正式实验。
 
-CLI 在加载数值库之前将常见 BLAS/OpenMP 线程数设为 1；并行批处理的计时标记为可能受争抢，单核计时应使用 `--workers 1`。正式运行前应固定源码和配置，并保存对应提交及运行清单。
+已有数据的完整策略复算：
 
-
-## 文件层级和依赖
-```text
-RL_project/
-├── AGENTS.md                         # 开发约束
-├── Guideline.md                      # 研究目标、实验协议、阶段验收
-├── README.md                         # 安装、入口命令、复现导航
-├── Proposal.md                       # 原提案，保留原位置
-├── Proposal.pdf
-├── Project_Requirements.md           # 原课程要求，保留原位置
-├── Project_Requirements.pdf
-├── pyproject.toml                    # 包元数据、依赖、CLI、pytest 配置
-├── uv.lock
-├── .python-version                  # Python 3.11
-├── .gitignore
-│
-├── docs/
-│   ├── architecture.md              # 当前架构：边界、接口和数据流
-│   ├── architecture-plan.md         # 完整架构计划存档
-│   ├── theory.md                    # T1–T5 证明及其实现对应关系
-│   ├── results.md                   # 报告论证、实测结论、证据索引
-│   └── contributions.md             # 实际完成与交叉复核记录
-│
-├── configs/
-│   └── study.json                   # 开发、主实验、大规模、压力与消融配置
-│
-├── src/
-│   └── rl_retest/
-│       ├── __init__.py
-│       ├── cli.py                   # 命令解析与流程调用
-│       ├── model.py                 # 模型类型、历史、信念与纯数学运算
-│       ├── policy.py                # 不可变 Stop/Test 策略
-│       ├── bounds.py                # 完美信息上界、成本上界、停止判据
-│       ├── evaluation.py            # 固定策略评价、类型重采样混合评价
-│       ├── analysis.py              # 配对统计、结果表、图表
-│       │
-│       ├── planners/
-│       │   ├── __init__.py
-│       │   ├── common.py            # 预算、转移缓存、计数器、PlanResult
-│       │   ├── dynamic.py           # 精确 DP、前瞻、myopic、迭代加深
-│       │   ├── blinkered.py         # 单路径限制规划及滚动策略构造
-│       │   └── bounded.py           # 上下界搜索与检查点
-│       │
-│       └── experiments/
-│           ├── __init__.py
-│           ├── tasks.py             # 配置展开、任务生成、记忆与压力条件
-│           ├── runner.py            # 方法选择、运行、计时、并行与续跑
-│           └── records.py           # 实验记录、策略编解码、文件读写
-│
-├── tests/
-│   ├── oracle.py                    # 独立有理数联合枚举实现
-│   ├── cases.py                     # 解析例子和固定边界用例
-│   ├── test_core.py                 # 模型、规划、上界和评价测试
-│   ├── test_experiments.py
-│   └── test_architecture.py          # 依赖方向与验证器独立性
-│
-├── .github/
-│   └── workflows/
-│       └── ci.yml                   # 安装、核心测试、小型流程检查
-│
-├── artifacts/                       # 自动生成，默认不纳入 Git
-│   └── <run_id>/
-│       ├── manifest.json            # 配置快照、来源版本、环境、哈希
-│       ├── tasks.jsonl              # 固定任务数据
-│       ├── jobs.jsonl               # 应执行的任务与方法组合
-│       ├── records/
-│       │   └── <job_id>.jsonl        # 原始结果、完整策略、预算检查点
-│       ├── analysis/
-│       │   ├── tables/
-│       │   └── figures/
-│       └── run.log
-│
-├── .venv/                           # 项目环境，忽略
-├── .cache/                          # 工具与绘图缓存，忽略
-└── .tmp/                            # 测试和原子写入临时文件，忽略
+```sh
+uv run rl-retest verify --run-dir data/main
+uv run rl-retest verify --run-dir data/large
+uv run rl-retest verify --run-dir data/stress
 ```
 
-```mermaid
-flowchart TD
-    CLI[CLI] --> RUN[实验编排]
-    CLI --> ANA[统计与绘图]
-    RUN --> TASK[任务与条件构造]
-    RUN --> PLAN[规划器]
-    RUN --> EVAL[固定策略评价]
-    RUN --> REC[结果读写]
-    RUN --> BOUNDS[数学上界]
-    ANA --> REC
-    PLAN --> COMMON[预算与转移缓存]
-    PLAN --> BOUNDS[数学上界]
-    PLAN --> POLICY[不可变策略]
-    COMMON --> MODEL[模型与信念运算]
-    BOUNDS --> MODEL
-    EVAL --> MODEL
-    EVAL --> POLICY
-    TASK --> MODEL
-    REC --> POLICY
+重新生成当前统计与机制结果：
+
+```sh
+uv run python -m scripts.analyze_study --source data --out results/study
+uv run python -m scripts.analyze_history --source data --out results/history
+uv run python -m scripts.analyze_sequential --source data --out results/sequential
+uv run python -m scripts.diagnose_tolerance --source data --out results/search
+uv run python -m scripts.analyze_search --source data --out results/search
+uv run python -m scripts.review_evidence --source data --out results/validation
 ```
 
-## 实验数据流
+前三项读取正式记录；序贯分析还检查固定解析例子的成本边界。容差诊断在既有任务上重新规划，搜索分析读取该诊断结果。重复复现不增加独立样本数。
 
-```text
-configs/study.json
-    ↓ prepare：生成并冻结配置快照、任务和作业
-manifest.json + tasks.jsonl + jobs.jsonl
-    ↓ 按作业构造两套独立输入
-PlanningProblem（规划模型）      EvaluationContext（真实条件模型）
-    ↓ 规划                              ↑
-完整 Policy + 模型内价值／上下界 ── 固定策略真实评价
-    ↓ run：按作业保存结果和完整策略
-records/<job_id>.jsonl
-    ├── verify：读取保存的策略，重新计算价值并检查记录
-    └── analyze：读取原始记录，生成配对统计、表格和图表
-```
+## 数据与计算契约
 
-- **任务与信念**：历史由固定的潜在路径类型产生；规划器只接收规划信念，真实条件信念单独用于评价。`correct`、`reset`、`misread` 在任务层构造。
-- **策略与评价**：每个终止节点保存具体路径，测试节点保存成功和失败两个后续分支。评价器执行已保存的路径，不根据真实信念重新选路。
-- **预算与检查点**：规划器共用后继信念计算的缓存与计数规则。大规模搜索和迭代加深在一次运行中保存多个预算检查点；等价方法复用结果时，记录中标明来源。
-- **结果与复现**：每个作业独立保存 JSONL 分片，续跑跳过成功作业并重试失败作业。清单记录配置、任务、作业、源码和锁文件的哈希；规划或评价源码变化后需要准备新的运行目录。统计分析读取已有记录，分析代码的来源另行记录。
-- **研究边界**：当前实验使用已知能力对应的成功概率表，DPO 是研究动机；正式 3240 个主任务及大规模、压力测试已完成，结果见 [验证状态与结果索引](docs/results.md)。
+测试预算限制环境交互次数；规划预算统计实际后继信念更新。规划器返回完整不可变策略，评价器执行其中保存的终止路径，不重新优化。真实条件模型与规划模型分别传入。
 
-## 文档导航
+正式种子、bootstrap 设置和方法配置以 `configs/study.json` 及每组数据的冻结 manifest 为准。清单中的源码和 Git 摘要描述数据生成时的来源，不会随文档整理而改写。模块边界与数据流见架构文档。
 
-[Guideline.md](Guideline.md) 定义研究任务和验收标准；[架构文档](docs/architecture.md) 描述当前实现的边界和接口；[完整架构计划](docs/architecture-plan.md) 保留实施前的方案；[理论证明](docs/theory.md)、[结果索引](docs/results.md) 和[贡献记录](docs/contributions.md) 分别维护证明、实测状态和实际工作。
-
-## 正式成果（2026-11-17）
-
-[完整成果包](artifacts/handoff-20261119/README.md) · [PPT交接](artifacts/handoff-20261119/PPT_HANDOFF.md) · [结果索引](artifacts/handoff-20261119/RESULTS.md)。正式种子为20261123，详情见 docs/execution-20261117.md。
+统计按任务配对、设置等权；逐比较 95% 区间不代表全体结论的联合保证。精确计算和探索性诊断分别解释。运行时间为单工作进程下的观测值，不能据此认定机器没有其他负载。

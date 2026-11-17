@@ -1,6 +1,6 @@
 import pytest
 from rl_retest.analysis import _paired
-from scripts.build_handoff import estimate, paired
+from scripts.analyze_study import estimate, paired
 
 
 def row(task,method,value):
