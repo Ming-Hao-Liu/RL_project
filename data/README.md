@@ -1,6 +1,6 @@
 # 正式数据
 
-本目录只保留一份未压缩的正式数据。除本说明外，内容不纳入 Git；数据是否进入版本控制尚未决定。
+本目录只保留一份未压缩的正式数据。除本说明外，内容不纳入 Git。
 
 | 目录 | 基础任务数 | 作业数 | 方法／检查点记录数 |
 |---|---:|---:|---:|
@@ -31,3 +31,25 @@
 ## planning：独立初始化确认
 
 新种子20261124，160个基础任务，2240条方法记录（每任务14条），另有32个任务×4方法×3次重复的384条计时。任务名包含研究名与种子；与原large组分开。manifest冻结新配置、源码和生成提交；records每任务一个JSON数组，timing.jsonl保存原始重复。此组不使用旧CLI作业格式；用`python -m scripts.verify_planning`复算，不能把其记录混入旧large汇总。
+
+## research：解析机制与有限校准
+
+`configs/research.json`冻结范围，manifest记录配置、任务清单哈希、逐源码文件哈希、生成提交75ed79b和线程环境。所有记录未压缩、保留完整策略，不与旧主网格混算。
+
+| 文件/组 | 行数/数量 | 数据含义 |
+|---|---:|---|
+| tasks.jsonl | 36 | 从main按参数和index选择的固定校准评价任务；复用历史，不新增任务总体样本 |
+| jobs.jsonl | 1473 | grid1329、deep24、独立校准重复120 |
+| truth.json | 36策略 | 固定任务的真实表DP参照，各只计算一次 |
+| records/grid-*.json | 1329作业×2策略 | 完整21×21网格加2锚点，B1/2/3；exact/myopic |
+| records/deep-*.json | 24作业×5策略 | exact/myopic/blinkered/cold/warm，完整问题定义和策略 |
+| records/calibration-*.json | 120作业，8880策略 | 8640主要方法策略及240预定误差分离策略 |
+| phase_timing.json | 24 | 已有planning中8任务各3次，单进程补测阶段耗时 |
+
+每个结果JSON有`job`和`records`。机制组额外有`problem`（belief/spec）；校准组有`calibration`（样本量、重复、成功计数、估计值、有效样本数）。每个校准重复为五个概率参数估计表：C_old和三个C_current各m次，A两批合并2m次，共6m个校准观测；I结构固定0，无校准样本。独立合成标签仅用于此校准，不是评价任务隐藏类型。
+
+策略记录字段：`policy`为可独立执行的树，`model_value/lower/upper`属于规划模型；`expected_utility/expected_tests/success_probability`属于真实评价模型；`evaluations`计后继更新，`planning_seconds/evaluation_seconds`分开计时；`status`保留正常停止状态。校准记录还保存`component`（both/history/future）、规划初始信念和规划表；真实条件模型由tasks和main的固定配置恢复。诊断切片中的单独误差不是相互可加的贡献。
+
+阶段计时中`root_setup_seconds`包含根上界及动作结构，`myopic_seconds`为种子策略构造，`initialization_management_seconds`为其余初始化，`search_seconds`为后续计算；`total_seconds`逐条等于四者之和，`planning_wall`还包含调用包装和返回开销。`evaluations`为初始化更新，`search_evaluations`与其相加为`total_evaluations`。中位数分别计算，不能相加。
+
+校准随机性单位是repeat；同一估计表的36任务不独立。机制网格点是确定性覆盖，不是总体抽样。每个固定策略价值是精确期望而非执行蒙特卡洛。核验入口`python -m scripts.verify_research`，哈希索引在`results/research/input_sha256.json`。

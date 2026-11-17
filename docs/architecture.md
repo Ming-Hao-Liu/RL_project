@@ -65,3 +65,9 @@ bounds → model
 `data/` 和 `results/` 各保留一份规范内容，只有目录说明纳入 Git；原始数据、派生输出、环境和缓存均留在项目内。本地数据格式与目录说明见[数据入口](../data/README.md)及[结果入口](../results/README.md)。
 
 根节点初始化接口`solve_bounded_warm`返回普通PlanResult和初始化检查点。它复用同一TransitionCache调用滚动myopic；只允许单预算调用，避免较大预算初始化被较小预算检查点免费复用。原搜索默认接口保持不变。独立确认脚本使用带研究名和种子的任务ID，数据目录为data/planning，不与旧三组运行混存。
+
+## 有限校准与机制扩展
+
+`experiments/calibration.py`只负责合成已知类型校准计数、固定估计器与plug-in规划输入，不改变规划器接口。历史/未来单独误差条件在输入构造层完成。共享估计表的统计依赖保存在实验记录的size/repeat中；规划算法仍只接收固定PlanningProblem。
+
+`scripts/run_research.py`冻结机制/校准清单、独立作业与原子输出，复用现有DP和搜索；`analyze_mechanisms.py`/`analyze_calibration.py`从保存记录生成统计与分歧案例；`verify_research.py`固定策略复算并调用测试目录独立验证器。解析阈值案例由分析脚本调用已有DP验算，统计部分不触发重规划。`time_initialization.py`仅补测既有warm搜索；新增计时字段不改变动作选择、计数或预算。

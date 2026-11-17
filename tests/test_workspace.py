@@ -17,6 +17,11 @@ SCRIPTS = (
     'analyze_search',
     'diagnose_tolerance',
     'review_evidence',
+    'run_research',
+    'analyze_mechanisms',
+    'analyze_calibration',
+    'time_initialization',
+    'verify_research',
 )
 
 

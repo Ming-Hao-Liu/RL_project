@@ -3,7 +3,7 @@ from dataclasses import replace
 from fractions import Fraction as F
 import pytest
 from rl_retest.model import ModelSpec, PlanningProblem, EvaluationContext, History, posterior
-from rl_retest.policy import Stop, Test as TestPolicy
+from rl_retest.policy import Stop, Test as PolicyTest
 from rl_retest.planners.dynamic import solve_exact
 from rl_retest.evaluation import evaluate
 from rl_retest.experiments.calibration import calibrate, plugin_problem
@@ -30,7 +30,7 @@ def test_failure_chain(n,action):
     assert plan.model_value==pytest.approx(float(expected),abs=1e-14)
     ev=evaluate(plan.policy,EvaluationContext(b,problem.spec))
     assert ev.expected_utility==pytest.approx(float(expected),abs=1e-14)
-    assert ('test' if isinstance(plan.policy,TestPolicy) else 'fallback' if plan.policy.path==-1 else 'execute')==action
+    assert ('test' if isinstance(plan.policy,PolicyTest) else 'fallback' if plan.policy.path==-1 else 'execute')==action
     distribution=joint(((.1,.9,0.),),((0,.5,0),),((0,),),((n,),))
     assert float(fixed_policy(policy_to_data(plan.policy),distribution,(0,.8,0),.5,1,.02))==pytest.approx(float(expected),abs=1e-14)
 
@@ -58,9 +58,9 @@ def test_threshold_and_boundaries():
 
 
 def test_calibration_reproducible_and_no_truth_leakage():
-    a=calibrate(2026111701,10,0)
-    assert a==calibrate(2026111701,10,0)
-    assert a!=calibrate(2026111701,10,1)
+    a=calibrate(2026110801,10,0)
+    assert a==calibrate(2026110801,10,0)
+    assert a!=calibrate(2026110801,10,1)
     assert a['estimates']['a']==(a['counts']['a_old']+a['counts']['a_current']+1)/22
     t=Task('test',{'p_c_current':.5},((.2,.6,.2),),History(((0,),),((3,),)),0)
     spec=ModelSpec(1,.02,3,.5,(0,.5,.9),((0,.1,.9),))
@@ -74,3 +74,17 @@ def test_calibration_reproducible_and_no_truth_leakage():
     assert evaluate(plan.policy,EvaluationContext(true,spec)).expected_utility==pytest.approx(float(independent),abs=1e-13)
     # Parameter changes cannot make evaluation select a new terminal path.
     assert evaluate(Stop(-1),EvaluationContext(true,spec)).expected_utility==.5
+
+
+def test_cluster_interval_and_divergence():
+    from scripts.analyze_calibration import cluster_interval
+    from scripts.analyze_mechanisms import first_divergence
+    from rl_retest.planners.dynamic import solve_lookahead
+    ci=cluster_interval([.02]*30)
+    assert ci['clusters']==30 and ci['mean']==pytest.approx(.02)
+    assert ci['ci_low']==pytest.approx(.02) and ci['ci_high']==pytest.approx(.02)
+    p=PlanningProblem(((0.,.05,.95),),ModelSpec(1,.005,2,.5,(0,.8,.05),()))
+    a,b=solve_exact(p),solve_lookahead(p,1)
+    d=first_divergence(policy_to_data(a.policy),policy_to_data(b.policy),p)
+    assert d['history']==[] and d['local_gain']==pytest.approx(.00309375)
+    assert sum(x['probability'] for x in d['exact_branches'])==pytest.approx(1.)

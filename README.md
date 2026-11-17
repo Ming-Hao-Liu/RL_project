@@ -101,3 +101,21 @@ uv run python -m scripts.review_evidence --source data --out results/validation
 正式种子、bootstrap 设置和方法配置以 `configs/study.json` 及每组数据的冻结 manifest 为准。清单中的源码和 Git 摘要描述数据生成时的来源，不会随文档整理而改写。模块边界与数据流见架构文档。
 
 统计按任务配对、设置等权；逐比较 95% 区间不代表全体结论的联合保证。精确计算和探索性诊断分别解释。运行时间为单工作进程下的观测值，不能据此认定机器没有其他负载。
+
+## 当前A–D研究材料与复现
+
+从[统一研究说明](docs/report.md)开始阅读；第5.1–5.3节解释重测边界及机制，第6.5节完成搜索分账，第7.1节报告有限样本校准。数据字典见[research数据](data/README.md)，判断、效应范围与停止理由见[证据台账](docs/evidence.md)。本轮没有新增搜索变体。
+
+```sh
+export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1
+# 完整重建新实验到独立目录；原始数据不覆盖
+uv run python -m scripts.run_research --source data --out artifacts/research-reproduction --workers 2
+# 以下读取本地正式数据；verify不重新优化保存策略
+uv run python -m scripts.verify_research --source data --out results/research
+uv run python -m scripts.analyze_mechanisms --source data --out results/research
+uv run python -m scripts.analyze_calibration --source data --out results/research
+```
+
+`run_research`按作业原子保存、支持续跑，`--group grid|deep|calibration`可选固定子组；冻结清单要求配置和数值源码相同，运行顺序不改变任务或校准表。上述分析入口读取`<source>/main`、`<source>/planning`和`<source>/research`。重建副本的分析可将三个组放在同一新的source根目录下（main/planning复用原始目录的符号链接即可），不改写正式目录。
+
+阶段计时可独立执行`uv run python -m scripts.time_initialization --out artifacts/phase-timing-reproduction.json`。它只重测8个规定任务、三次重复，核对保存策略和计数，不增加统计样本。受控计时请在本项目批处理结束后运行。原始正式A–D源码版本为`75ed79b`；分析与复核脚本随当前HEAD保存，完整来源由`data/research/manifest.json`和`results/research/release.json`关联。数据继续保持本地未压缩、不进入Git。
