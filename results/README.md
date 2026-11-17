@@ -14,7 +14,7 @@
 
 CSV 是可读取的数值表；PDF 是矢量图，PNG 是同图预览，两种格式不是两个实验。JSON／JSONL 保存协议、来源和完整策略。各分析目录的 README 解释对应输出，研究结论统一见 `../docs/report.md` 和 `../docs/evidence.md`。
 
-输入来自 `../data/`。固定任务上的成本和容差诊断单独标记，不能当作新的随机确认样本。重建命令见项目 README；容差诊断先于搜索分析执行。
+输入来自 `../data/`。固定任务上的成本和容差诊断单独标记，不能当作新的随机确认样本。重建命令见[使用说明](../docs/usage.md)；容差诊断先于搜索分析执行。
 
 `validation/data_integrity.json` 列出正式原始文件的 SHA256；`validation/workspace_checks.json` 记录原基准整理时的测试、数据复算、数值一致性和独立目录检查范围；最新工作区与研究冻结状态以`research/release.json`为准。文件存在性和摘要检查不代替数学证明或算法验证。
 

@@ -1,142 +1,104 @@
-# RL Project
+# RL Project：能力提升后，何时重试失败路径？
 
-有限时域贝叶斯决策研究：能力改变后如何解释历史测试，并在测试成本与规划计算预算下决定是否重测。
+## 1. 背景与研究问题
 
-## 项目入口
+一条路线过去失败，可能是路线本身不可行，也可能只是当时能力不足。能力提高后，应该直接尝试、花成本重新测试，还是选择备选路线？进一步测试和规划又应该做到什么程度？
 
-- [研究正文](docs/report.md)：问题、方法、结果及讨论。
-- [强化学习视角](docs/report.md#rl-view)：信念状态MDP、价值函数、策略求解，以及与策略迭代的区别。
-- [实验协议](docs/protocol.md)：模型、配置、评价与统计口径。
-- [理论说明](docs/theory.md)：推导、假设与边界。
-- [证据索引](docs/evidence.md)：研究结论对应的数据和图表。
-- [验证说明](docs/validation.md)：检查范围、实际结果及计时口径。
-- [项目架构](docs/architecture.md)：模块职责、接口和依赖方向。
-- [交接材料](docs/handoff.md)：冻结结论、材料导航、批次口径和贡献说明。
-- [原始提案](docs/references/Proposal.md)与[课程要求](docs/references/Project_Requirements.md)：原文及译文，作为来源材料保留。
+我们建立了一个可精确计算的模拟决策模型。每条路线有固定但未知的类型：**I类不可行，C类成功率随能力变化，A类成功率不随能力变化**。历史必须结合观测发生时的能力解释；测试更新我们对路线的认识，最终执行才获得任务奖励。
 
-## 目录
+项目沿着“**解释历史 → 判断是否测试 → 判断是否需要更深规划 → 检查概率估计误差**”展开。能力变化由成功概率表表示，DPO是应用动机，实验没有实际训练语言模型。研究范围已冻结。
+
+详细背景见[研究正文](docs/report.md)，原始材料见[Proposal](docs/references/Proposal.md)和[课程要求](docs/references/Project_Requirements.md)。
+
+## 2. 强化学习视角
+
+这是一个**部分可观测任务上的信念状态MDP**，采用已知模型下的有限时域动态规划和预算搜索。
+
+| RL要素 | 在项目中是什么 |
+|---|---|
+| 状态 | 对各路线类型的后验信念b，以及剩余测试次数h |
+| 动作 | 测试某条路线；或停止测试并指定最终执行路线，包括备选路线 |
+| 反馈与转移 | 观察测试成功/失败，贝叶斯更新信念；测试预算减一 |
+| 奖励 | 每次测试支付−κ；最终执行成功获得R，失败获得0 |
+| 策略 | 针对不同信念和剩余预算，决定测哪条路线、何时停止、最终选哪条 |
+| 价值函数 | V_h(b)：从当前状态开始，最多再测h次的最优期望净收益 |
+
+**规划、测试、最终执行是三件事。** 规划在模型中计算策略，消耗计算预算M；测试获取实际观测，最多B次，每次成本κ；最终执行只发生一次。测试成功不保证最终成功，测试失败也不必放弃该路线。测试改变认识，不提升执行能力。
+
+我们优化的是
+
+$$J(\pi)=\mathbb E_\pi[R\mathbf1\{\text{最终成功}\}-\kappa N].$$
+
+设S(b)为立即选择最佳路线执行的期望奖励，最优价值满足Bellman递推：
+
+$$V_0(b)=S(b),$$
+$$V_h(b)=\max\left\{S(b),\max_i\left[-\kappa+\sum_oP(o\mid b,i)V_{h-1}(\tau(b,i,o))\right]\right\}.$$
+
+它比较“现在停止”与“测试后继续决策”。第一次测试即使不能立即改变终止选择，也可能开启有价值的第二次测试；动态规划会把这种未来收益计入当前决策。选择价值最高的动作得到策略，代码保存完整的成功/失败分支树，评价时严格执行保存动作。
+
+实现采用**有限时域Bellman递归与缓存**，不是经典的“策略评价—策略改进”循环。Myopic只用一步前瞻作每次选择；blinkered限制每次规划中的未来测试路径；搜索维护可执行价值下界L和最优价值上界U，分别衡量策略质量与认证程度。项目没有实现Q-learning、策略梯度或经典策略迭代；校准实验是先估计概率表、再固定模型规划。
+
+概念、Q/V函数及代码对应详见[强化学习视角专节](docs/report.md#rl-view)，证明见[理论说明](docs/theory.md)。
+
+## 3. 重要数据与结论
+
+以下效用均以R=1计。不同实验批次分别解释，不能混用其均值作为同任务比较。
+
+| 研究问题与证据范围 | 主要结果 | 支持的结论 |
+|---|---|---|
+| 历史解释：原主网格中1620个有历史任务 | correct−reset平均效用差 **.081429**，95% CI [.074886,.088053]；correct−misread **.006387**，CI [.004643,.008231] | 保留历史与正确解释历史是不同贡献，收益大小和作用机制不同 |
+| 何时重测：单路径、一次测试的解析特例 | 指定案例中历史失败0/1/7次，分别直接执行/重测/选备选；价值为 **.72/.676364/.5** | 中间信念区间最值得获取信息；闭式条件不直接推广到一般多路径、多步问题 |
+| 多步决策：全部3240个主任务 | **61.11%**不值得测试；**33.92%**值得测试但myopic已最优；**4.97%**有额外多步收益 | 平均多步收益小，同时来自“不需测试”和“简单策略已经足够” |
+| 额外搜索：独立确认组80个无历史任务，M=10000、ε=0 | myopic与初始化搜索效用均为 **.817371**，策略树逐任务相同；后续上界平均下降 **.03814**，最终宽度 **.024449** | 额外计算获得认证信息，没有观察到策略改善，且仍未达到.01容差 |
+| 有限校准：固定36任务，每个样本量30个独立校准重复 | m10→m300，估计DP真实损失 **.002068→.000289**；差值 **−.001779**，95% CI [−.002218,−.001354] | 更多校准样本降低固定任务集的平均损失；区间只覆盖校准随机性 |
+
+**较深机制任务的完整对照。** 在预定K=2/3、B=4/6的24任务中，两搜索使用M=10000、ε=0；所有方法在同任务比较：
+
+| 方法 | 达到精确最优值 | 平均效用损失 | 非零损失条件均值 | 平均后继更新数 | 规划耗时中位数（毫秒） |
+|---|---:|---:|---:|---:|---:|
+| 精确DP | 24/24 | 0 | — | 980.00 | .890 |
+| Myopic | 9/24 | .00643880 | .01030209（15任务） | 38.33 | .099 |
+| Blinkered | 17/24 | .00004460 | .00015291（7任务） | 219.83 | .296 |
+| 原搜索 | 24/24 | 0 | — | 275.08 | 2.169 |
+| 初始化搜索 | 24/24 | 0 | — | 280.25 | 2.270 |
+
+两种搜索的证书也全部闭合，独立于“策略达到精确值”计数。耗时为单进程同任务三次重复的中位数，再跨24任务取中位数。搜索更新较少，但汇总耗时比DP高；DP本身已很便宜。因此这组支持部分任务存在序贯及联合跨路径规划收益，**不支持必须使用通用搜索或搜索总体更快**。机制任务是确定性覆盖，不代表应用发生频率，大规模任务的精确最优值仍未知。
+
+概率误差、策略变化和真实损失也不是同一个量：参数有误时策略可能不变；动作变化可能只发生在平局或不可达分支。预定历史/未来误差分离切片全部零损失，未能识别总体损失来源。
+
+数值与解释详见[研究正文](docs/report.md)、[结论—证据台账](docs/evidence.md)、[深任务完整表](results/research/deep_summary.csv)和[校准比较](results/research/calibration_comparisons.csv)。采样单位与置信区间口径见[实验协议](docs/protocol.md)。
+
+## 4. 我们具体完成了什么
+
+- **建模与理论**：建立能力条件下的历史后验、信念状态和测试成本模型；推导充分统计量、Bellman方程、初始信念误设损失界、完美信息上界和停止判据；给出连续测试反例及单次重测闭式区间。
+- **算法与评价**：实现精确DP、myopic、深度前瞻、blinkered、迭代加深、上下界搜索及一个根节点myopic初始化变体。所有方法输出完整策略，真实评价与规划模型分离。
+- **实验与机制分析**：完成3240个主任务、160个原大规模任务、复用40任务的压力测试；另完成160任务的独立初始化确认、1329个单路径网格任务、24个深任务，以及固定36任务上的120组校准重复。复用任务、预算检查点和方法记录不视作新增独立样本。
+- **正确性与复现**：用独立有理数联合枚举、解析例子和保存策略复算核对实现；保存配置、种子、策略、界、计算成本、原始数据哈希与生成版本。代码支持断点续跑，分析结果可从保存记录重建。
+
+贡献集中于**能力变化下的历史解释、具体决策规律和可复核的机制证据**。已有的DP、上下界搜索和概率估计方法不作为原创通用算法；实际成员贡献按完成与复核记录确认。
+
+完整材料：[数学推导](docs/theory.md) · [实现验证](docs/validation.md) · [实验协议](docs/protocol.md) · [研究交接](docs/handoff.md)。
+
+## 5. 代码基本结构
 
 ```text
-src/rl_retest/    模型、策略、规划、评价和实验流程
-tests/           独立枚举、算法、数据流程和架构检查
-configs/         可执行研究配置
-scripts/         正式数据分析、机制诊断和独立复核入口
-docs/            当前研究与工程说明
-data/            一份正式任务和完整策略记录（本地，不纳入 Git）
-results/         一份统计表、图表、诊断与验证结果（本地，不纳入 Git）
-artifacts/       新运行的临时输出，默认忽略
+src/rl_retest/
+  model.py             模型、历史、后验与信念转移
+  policy.py            完整不可变策略
+  bounds.py            价值上界与停止判据
+  evaluation.py        固定策略的真实期望评价
+  planners/            DP、基线、预算计量与上下界搜索
+  experiments/         任务、校准、批处理与结果持久化
+  analysis.py          保存记录的统计分析
+  cli.py               实验流程入口
+tests/                 独立枚举、算法、流程与架构检查
+configs/               原基准、独立确认、机制与校准配置
+scripts/               研究分析、诊断、匹配计时与复核
+docs/                 研究正文、理论、协议、架构与使用说明
+data/                  本地原始任务、策略和计量记录
+results/               本地统计表、图表与验证清单
 ```
 
-[数据说明](data/README.md)解释任务、作业、记录及来源摘要；[结果说明](results/README.md)说明各输出的用途。Git 只跟踪这两个目录的 README，不包含实验数据或生成图表。新克隆需要获得数据目录，或按冻结配置重新运行实验。
+模型与算法不读取实验文件；规划器不接触真实隐藏类型；评价器不替保存策略重新选动作；统计分析与实验运行分开。依赖关系和接口见[架构说明](docs/architecture.md)。
 
-## 环境与测试
-
-需要 uv 和 Python 3.11。在项目根目录执行，环境、缓存和临时文件均留在项目内：
-
-```sh
-mkdir -p .cache/uv .cache/python .cache/matplotlib .tmp
-export UV_CACHE_DIR="$PWD/.cache/uv"
-export UV_PYTHON_INSTALL_DIR="$PWD/.cache/python"
-export XDG_CACHE_HOME="$PWD/.cache"
-export MPLCONFIGDIR="$PWD/.cache/matplotlib"
-export TMPDIR="$PWD/.tmp"
-export PYTHONDONTWRITEBYTECODE=1
-export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1
-uv sync --locked --group dev
-uv run pytest
-```
-
-项目的 `.venv` 可能依赖 `.cache/python` 中的解释器，清理缓存时保留该目录。
-
-## 执行与复现
-
-生成新任务、执行或续跑、验证策略、生成单组分析：
-
-```sh
-uv run rl-retest prepare --config configs/study.json --suite dev --out artifacts/dev
-uv run rl-retest run --run-dir artifacts/dev --workers 1
-uv run rl-retest verify --run-dir artifacts/dev
-uv run rl-retest analyze --run-dir artifacts/dev
-```
-
-正式运行使用 `main`、`large` 或 `stress` suite，并为每次新运行指定新的输出目录。`run` 检查冻结源码和配置，续跑只补齐未完成的作业；不要覆盖已有正式记录。`pruning` 是可执行的剪枝诊断配置，不属于已报告的三组正式实验。
-
-旧三组数据的严格复算使用其生成代码版本，避免改写来源摘要：
-
-```sh
-mkdir -p .tmp/original
-git archive 3382745 | tar -x -C .tmp/original
-PYTHONPATH="$PWD/.tmp/original/src" uv run python -m rl_retest.cli verify --run-dir data/main
-PYTHONPATH="$PWD/.tmp/original/src" uv run python -m rl_retest.cli verify --run-dir data/large
-PYTHONPATH="$PWD/.tmp/original/src" uv run python -m rl_retest.cli verify --run-dir data/stress
-```
-
-新增初始化确认实验使用独立的配置与数据目录：
-
-```sh
-uv run python -m scripts.confirm_planning --out artifacts/planning-reproduction
-uv run python -m scripts.analyze_planning --source data/planning --out results/planning
-```
-
-已有确认数据的复算：`uv run python -m scripts.verify_planning`。上述运行命令创建复现副本，不把重复运行计为新样本。
-
-确认实验的配置见 `configs/planning.json`。保存清单严格核对源代码与生成提交；从零重建可先检出该清单记录的提交并使用新的输出目录，不覆盖已有数据。分析脚本可以在当前版本读取冻结记录。
-
-重新生成当前统计与机制结果：
-
-```sh
-uv run python -m scripts.analyze_study --source data --out results/study
-uv run python -m scripts.analyze_history --source data --out results/history
-uv run python -m scripts.analyze_sequential --source data --out results/sequential
-uv run python -m scripts.diagnose_tolerance --source data --out results/search
-uv run python -m scripts.analyze_search --source data --out results/search
-uv run python -m scripts.review_evidence --source data --out results/validation
-```
-
-前三项读取正式记录；序贯分析还检查固定解析例子的成本边界。容差诊断在既有任务上重新规划，搜索分析读取该诊断结果。重复复现不增加独立样本数。
-
-## 数据与计算契约
-
-测试预算限制环境交互次数；规划预算统计实际后继信念更新。规划器返回完整不可变策略，评价器执行其中保存的终止路径，不重新优化。真实条件模型与规划模型分别传入。
-
-正式种子、bootstrap 设置和方法配置以 `configs/study.json` 及每组数据的冻结 manifest 为准。清单中的源码和 Git 摘要描述数据生成时的来源，不会随文档整理而改写。模块边界与数据流见架构文档。
-
-统计按任务配对、设置等权；逐比较 95% 区间不代表全体结论的联合保证。精确计算和探索性诊断分别解释。运行时间为单工作进程下的观测值，不能据此认定机器没有其他负载。
-
-## 当前A–D研究材料与复现
-
-从[统一研究说明](docs/report.md)开始阅读；第5.1–5.3节解释重测边界及机制，第6.5节完成搜索分账，第7.1节报告有限样本校准。数据字典见[research数据](data/README.md)，判断、效应范围与停止理由见[证据台账](docs/evidence.md)。本轮没有新增搜索变体。
-
-```sh
-export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1
-# 完整重建新实验到独立目录；原始数据不覆盖
-uv run python -m scripts.run_research --source data --out artifacts/research-reproduction --workers 2
-# 以下读取本地正式数据；verify不重新优化保存策略
-uv run python -m scripts.verify_research --source data --out results/research
-uv run python -m scripts.analyze_mechanisms --source data --out results/research
-uv run python -m scripts.analyze_calibration --source data --out results/research
-```
-
-`run_research`按作业原子保存、支持续跑，`--group grid|deep|calibration`可选固定子组；冻结清单要求配置和数值源码相同，运行顺序不改变任务或校准表。上述分析入口读取`<source>/main`、`<source>/planning`和`<source>/research`。重建副本的分析可将三个组放在同一新的source根目录下（main/planning复用原始目录的符号链接即可），不改写正式目录。
-
-阶段计时可独立执行`uv run python -m scripts.time_initialization --out artifacts/phase-timing-reproduction.json`。它只重测8个规定任务、三次重复，核对保存策略和计数，不增加统计样本。受控计时请在本项目批处理结束后运行。原始正式A–D源码版本为`75ed79b`；分析与复核脚本随当前HEAD保存，完整来源由`data/research/manifest.json`和`results/research/release.json`关联。数据继续保持本地未压缩、不进入Git。
-
-## 研究冻结与版本对应
-
-研究基准版本`db37d68`保留；当前HEAD完成强基线、匹配耗时及结论口径收尾，不扩展研究矩阵。[统一研究说明](docs/report.md)第5.3节与[完整同任务表](results/research/deep_summary.csv)是深任务最终比较，`deep.csv`提供每个任务的五方法记录和匹配计时。
-
-| 证据批次 | 范围 | 来源与复算 |
-|---|---|---|
-| 原基准main/large/stress | 3240主任务、160大任务及40复用压力任务 | manifest记录生成时HEAD `4672e95`与实际源码哈希；可恢复的同源码快照`3382745`用于严格复算 |
-| 独立planning确认 | 新种子20261124的160任务 | `6413033`，与旧large分开汇总 |
-| research机制与校准 | 1329网格、24深任务、36复用任务上的120校准重复 | 数值源码`75ed79b`，研究说明基准`db37d68`，当前HEAD完善汇总 |
-| 深任务匹配计时 | 同24任务×5方法×3重复 | `scripts/time_deep.py`及`data/research/deep_timing.json`；不是新增任务 |
-
-已有正式计时直接由分析器读取，不必重跑。需要复现计时时，批处理结束后单独执行：
-
-```sh
-export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1
-uv run python -m scripts.time_deep --source data --out artifacts/deep-timing-reproduction.json
-```
-
-完整研究材料以`results/research/release.json`关联最终源码提交、配置、数据和结果哈希；`SHA256SUMS`校验该目录输出。Git不包含大结果，交接需同时保留本地data/results目录。数据生成版本不被当前文档版本覆盖，旧批次的均值不混入新批次排名。
+**安装、执行、续跑、验证和复现命令统一放在[代码使用与复现](docs/usage.md)。** 原始数据和生成结果保持本地、未压缩，不纳入Git；交接需同时保留data/results，字段见[数据字典](data/README.md)和[结果字典](results/README.md)。来源版本与最新提交由[发布清单](results/research/release.json)关联。

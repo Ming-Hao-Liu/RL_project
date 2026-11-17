@@ -24,7 +24,7 @@
 
 ## 来源与验证
 
-原始 manifest、任务、作业和策略记录保持生成时字节内容；其中历史 Git/source 摘要是来源信息，不是当前仓库版本声明。文件摘要索引见 `../results/validation/data_integrity.json`，保存策略复算命令见项目 README。
+原始 manifest、任务、作业和策略记录保持生成时字节内容；其中历史 Git/source 摘要是来源信息，不是当前仓库版本声明。文件摘要索引见 `../results/validation/data_integrity.json`，保存策略复算命令见[使用说明](../docs/usage.md)。
 
 统计表与图表统一位于 `../results/`，不在本目录保存第二份分析输出。新增实验使用新的运行目录；不要覆盖这些正式数据。
 
